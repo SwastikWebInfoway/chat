@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import {StatusBar, StyleSheet} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createStackNavigator} from '@react-navigation/stack';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {Provider as PaperProvider} from 'react-native-paper';
@@ -9,10 +10,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
 import AuthScreen from './src/screens/AuthScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
+import ChatScreen from './src/screens/ChatScreen';
 import FindFriendsScreen from './src/screens/FindFriendsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 // Extracted icon components to avoid defining during render
 const ChatIcon = ({color, size}: {color: string; size: number}) => (
@@ -32,6 +35,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+// Chat Stack Navigator
+function ChatStack() {
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="ChatList" component={ChatListScreen} />
+      <Stack.Screen name="Chat" component={ChatScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function TabNavigator() {
   const {theme} = useTheme();
@@ -68,8 +81,8 @@ function TabNavigator() {
         },
       }}>
       <Tab.Screen
-        name="ChatList"
-        component={ChatListScreen}
+        name="Chats"
+        component={ChatStack}
         options={{
           tabBarLabel: 'Chats',
           headerTitle: 'Chats',

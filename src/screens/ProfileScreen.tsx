@@ -68,7 +68,7 @@ const ProfileScreen: React.FC = () => {
   ];
 
   return (
-    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Cover Photo + Avatar Section */}
         <View style={styles.coverSection}>
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   
   // Cover & Avatar Section

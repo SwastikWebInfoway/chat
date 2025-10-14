@@ -93,7 +93,7 @@ const mockChats = [
   },
 ];
 
-const ChatListScreen = () => {
+const ChatListScreen = ({navigation}: {navigation: any}) => {
   const {theme} = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -318,7 +318,12 @@ const ChatListScreen = () => {
   };
 
   const handleChatPress = (chat: ChatItemType) => {
-    console.log('Chat pressed:', chat.name);
+    navigation.navigate('Chat', {
+      chatId: chat.id,
+      name: chat.name,
+      avatarColor: chat.avatarColor,
+      isOnline: chat.isOnline,
+    });
   };
 
   const renderChatItem = ({item}: {item: ChatItemType}) => (
