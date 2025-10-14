@@ -156,14 +156,17 @@ const FindFriendsScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]} edges={['top']}>
       {/* Modern Header */}
       <View style={[styles.modernHeader, {backgroundColor: theme.background}]}>
-        <Text style={[styles.modernHeaderTitle, {color: theme.text}]} variant="headlineMedium">
-          Discover People
-        </Text>
+        <View style={styles.headerTitleRow}>
+          <Icon name="people" size={32} color={theme.primary} />
+          <Text style={[styles.modernHeaderTitle, {color: theme.text}]} variant="headlineMedium">
+            Discover People
+          </Text>
+        </View>
         <Text style={[styles.headerSubtitle, {color: theme.textSecondary}]} variant="bodyMedium">
-          Connect with friends and colleagues
+          Connect with amazing people
         </Text>
       </View>
 
@@ -173,12 +176,14 @@ const FindFriendsScreen: React.FC = () => {
           mode="outlined"
           style={[styles.modernSearchInput, {backgroundColor: theme.surface}]}
           placeholder="Search people, roles, interests..."
+          placeholderTextColor={theme.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          left={<TextInput.Icon icon="magnify" />}
-          right={searchQuery ? <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} /> : undefined}
+          left={<TextInput.Icon icon="magnify" color={theme.primary} />}
+          right={searchQuery ? <TextInput.Icon icon="close" onPress={() => setSearchQuery('')} color={theme.textSecondary} /> : undefined}
           outlineColor={theme.border}
           activeOutlineColor={theme.primary}
+          textColor={theme.text}
         />
 
         {/* Filter Chips */}
@@ -196,11 +201,14 @@ const FindFriendsScreen: React.FC = () => {
               onPress={() => setActiveFilter(category.id)}
               style={[
                 styles.filterChip,
-                activeFilter === category.id && {backgroundColor: theme.primary + '15'}
+                {
+                  backgroundColor: activeFilter === category.id ? theme.primary : 'transparent',
+                  borderColor: activeFilter === category.id ? theme.primary : theme.border,
+                }
               ]}
               textStyle={{
-                color: activeFilter === category.id ? theme.primary : theme.textSecondary,
-                fontWeight: activeFilter === category.id ? '600' : '500'
+                color: activeFilter === category.id ? '#FFFFFF' : theme.text,
+                fontWeight: activeFilter === category.id ? '700' : '500'
               }}
               icon={category.icon}
             >
@@ -256,9 +264,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 20,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
   modernHeaderTitle: {
     fontWeight: '700',
-    marginBottom: 4,
   },
   headerSubtitle: {
     opacity: 0.8,
@@ -279,10 +292,11 @@ const styles = StyleSheet.create({
   filterChip: {
     marginRight: 12,
     height: 36,
+    borderWidth: 1.5,
   },
   listContent: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
   resultsHeader: {
     marginBottom: 20,

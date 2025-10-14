@@ -1,26 +1,18 @@
-/**
- * ChatApp Prototype
- * Beautiful chat app with yellow theme
- */
-
 import React, {useState} from 'react';
 import {StatusBar, StyleSheet} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {createStackNavigator} from '@react-navigation/stack';
 import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {Provider as PaperProvider} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
-import LoginScreen from './src/screens/LoginScreen';
-import SignupScreen from './src/screens/SignupScreen';
+import AuthScreen from './src/screens/AuthScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import FindFriendsScreen from './src/screens/FindFriendsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
 
 // Extracted icon components to avoid defining during render
 const ChatIcon = ({color, size}: {color: string; size: number}) => (
@@ -30,8 +22,6 @@ const ChatIcon = ({color, size}: {color: string; size: number}) => (
 const FriendsIcon = ({color, size}: {color: string; size: number}) => (
   <Icon name="people" color={color} size={size} />
 );
-
-
 
 const ProfileIcon = ({color, size}: {color: string; size: number}) => (
   <Icon name="person" color={color} size={size} />
@@ -54,25 +44,27 @@ function TabNavigator() {
         tabBarInactiveTintColor: theme.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.background,
+          backgroundColor: theme.surface,
           borderTopColor: theme.border,
-          borderTopWidth: 1,
-          elevation: 8,
+          borderTopWidth: 0,
+          elevation: 12,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          paddingTop: 8,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-          height: 64 + (insets.bottom > 0 ? insets.bottom : 0),
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.12,
+          shadowRadius: 8,
+          paddingTop: 10,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          height: 70 + (insets.bottom > 0 ? insets.bottom : 0),
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 2,
+          fontSize: 12,
+          fontWeight: '700',
+          marginBottom: 4,
         },
         tabBarIconStyle: {
-          marginTop: 2,
+          marginTop: 4,
         },
       }}>
       <Tab.Screen
@@ -93,7 +85,6 @@ function TabNavigator() {
           tabBarIcon: FriendsIcon,
         }}
       />
-
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
@@ -107,40 +98,11 @@ function TabNavigator() {
   );
 }
 
-function AuthNavigator({onLogin}: {onLogin: () => void}) {
-  const [isLogin, setIsLogin] = useState(true);
-
-  return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
-      {isLogin ? (
-        <Stack.Screen name="Login">
-          {() => (
-            <LoginScreen
-              onLogin={onLogin}
-              onSwitchToSignup={() => setIsLogin(false)}
-            />
-          )}
-        </Stack.Screen>
-      ) : (
-        <Stack.Screen name="Signup">
-          {() => (
-            <SignupScreen
-              onSignup={onLogin}
-              onSwitchToLogin={() => setIsLogin(true)}
-            />
-          )}
-        </Stack.Screen>
-      )}
-    </Stack.Navigator>
-  );
-}
-
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const {theme} = useTheme();
-  const insets = useSafeAreaInsets();
 
-  const handleLogin = () => {
+  const handleAuth = () => {
     setIsAuthenticated(true);
   };
 
@@ -155,7 +117,7 @@ function AppContent() {
         {isAuthenticated ? (
           <TabNavigator />
         ) : (
-          <AuthNavigator onLogin={handleLogin} />
+          <AuthScreen onAuth={handleAuth} />
         )}
       </NavigationContainer>
     </GestureHandlerRootView>

@@ -4,9 +4,11 @@ import {
   StyleSheet,
   ScrollView,
   Dimensions,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Text, Surface, Avatar, Button, TouchableRipple, Switch, Chip} from 'react-native-paper';
+import {Text, Surface, Avatar, Button, TouchableRipple, Chip} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../contexts/ThemeContext';
 
@@ -14,214 +16,204 @@ const {width} = Dimensions.get('window');
 
 const ProfileScreen: React.FC = () => {
   const {theme} = useTheme();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+
+  // User info
+  const userInfo = {
+    name: 'John Doe',
+    username: '@johndoe',
+    bio: 'Living my best life | Gamer | Photography enthusiast | Coffee addict',
+    joined: 'Joined March 2024',
+  };
 
   // User stats
   const userStats = [
-    { label: 'Friends', value: '324', icon: 'people' },
-    { label: 'Chats', value: '127', icon: 'chat' },
-    { label: 'Groups', value: '8', icon: 'group' },
+    { label: 'Friends', value: '324', icon: 'people', color: '#FF3B8B' },
+    { label: 'Chats', value: '127', icon: 'chat-bubble', color: '#A855F7' },
+    { label: 'Groups', value: '8', icon: 'group', color: '#00E676' },
   ];
 
-  const profileSections = [
-    {
-      id: 'account',
-      title: 'Account',
-      options: [
-        {
-          id: 'edit-profile',
-          title: 'Edit Profile',
-          subtitle: 'Update your personal information',
-          icon: 'person-outline',
-          onPress: () => console.log('Edit Profile'),
-          hasSwitch: false,
-        },
-        {
-          id: 'privacy',
-          title: 'Privacy & Security',
-          subtitle: 'Manage your privacy settings',
-          icon: 'lock-outline',
-          onPress: () => console.log('Privacy'),
-          hasSwitch: false,
-        },
-      ],
-    },
-    {
-      id: 'preferences',
-      title: 'Preferences',
-      options: [
-        {
-          id: 'notifications',
-          title: 'Notifications',
-          subtitle: 'Push notifications and alerts',
-          icon: 'notifications-outline',
-          onPress: () => setNotificationsEnabled(!notificationsEnabled),
-          hasSwitch: true,
-          switchValue: notificationsEnabled,
-        },
-        {
-          id: 'theme',
-          title: 'Dark Mode',
-          subtitle: 'Toggle dark theme',
-          icon: 'dark-mode',
-          onPress: () => setDarkMode(!darkMode),
-          hasSwitch: true,
-          switchValue: darkMode,
-        },
-      ],
-    },
-    {
-      id: 'support',
-      title: 'Support',
-      options: [
-        {
-          id: 'help',
-          title: 'Help & Support',
-          subtitle: 'Get help and contact support',
-          icon: 'help-outline',
-          onPress: () => console.log('Help'),
-          hasSwitch: false,
-        },
-        {
-          id: 'about',
-          title: 'About',
-          subtitle: 'App version and information',
-          icon: 'info-outline',
-          onPress: () => console.log('About'),
-          hasSwitch: false,
-        },
-      ],
-    },
+  // Recent Activity/Interests
+  const interests = [
+    { id: 1, label: 'Gaming', color: '#FF6B9D', icon: 'sports-esports' },
+    { id: 2, label: 'Photography', color: '#4ECDC4', icon: 'photo-camera' },
+    { id: 3, label: 'Music', color: '#A855F7', icon: 'music-note' },
+    { id: 4, label: 'Travel', color: '#FF9F43', icon: 'flight' },
+    { id: 5, label: 'Foodie', color: '#FF6348', icon: 'restaurant' },
+    { id: 6, label: 'Reading', color: '#54A0FF', icon: 'menu-book' },
   ];
 
-  const renderStatsCard = () => (
-    <Surface style={[styles.statsCard, {backgroundColor: theme.surface}]} elevation={2}>
-      <View style={styles.statsContainer}>
-        {userStats.map((stat, index) => (
-          <View key={stat.label} style={styles.statItem}>
-            <Icon name={stat.icon} size={24} color={theme.primary} />
-            <Text style={[styles.statValue, {color: theme.text}]} variant="headlineSmall">
-              {stat.value}
-            </Text>
-            <Text style={[styles.statLabel, {color: theme.textSecondary}]} variant="bodySmall">
-              {stat.label}
-            </Text>
-          </View>
-        ))}
-      </View>
-    </Surface>
-  );
-
-  const renderProfileOption = (option: any) => (
-    <TouchableRipple
-      key={option.id}
-      onPress={option.onPress}
-      style={styles.optionRipple}
-      rippleColor={theme.primary + '15'}
-    >
-      <Surface style={[styles.optionCard, {backgroundColor: theme.surface}]} elevation={1}>
-        <View style={styles.optionContent}>
-          <View style={styles.optionLeft}>
-            <View style={[styles.optionIconContainer, {backgroundColor: theme.primary + '15'}]}>
-              <Icon name={option.icon} size={20} color={theme.primary} />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={[styles.optionTitle, {color: theme.text}]} variant="bodyLarge">
-                {option.title}
-              </Text>
-              <Text style={[styles.optionSubtitle, {color: theme.textSecondary}]} variant="bodySmall">
-                {option.subtitle}
-              </Text>
-            </View>
-          </View>
-          {option.hasSwitch ? (
-            <Switch
-              value={option.switchValue}
-              onValueChange={option.onPress}
-              thumbColor={option.switchValue ? theme.primary : theme.textSecondary}
-              trackColor={{false: theme.border, true: theme.primary + '40'}}
-            />
-          ) : (
-            <Icon name="chevron-right" size={20} color={theme.textSecondary} />
-          )}
-        </View>
-      </Surface>
-    </TouchableRipple>
-  );
-
-  const renderSection = (section: any) => (
-    <View key={section.id} style={styles.section}>
-      <Text style={[styles.sectionTitle, {color: theme.text}]} variant="titleMedium">
-        {section.title}
-      </Text>
-      <View style={styles.sectionContent}>
-        {section.options.map(renderProfileOption)}
-      </View>
-    </View>
-  );
+  // Quick Actions
+  const quickActions = [
+    {
+      id: 'edit',
+      title: 'Edit Profile',
+      icon: 'edit',
+      color: theme.primary,
+      onPress: () => console.log('Edit Profile'),
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      icon: 'settings',
+      color: '#A855F7',
+      onPress: () => console.log('Settings'),
+    },
+    {
+      id: 'share',
+      title: 'Share Profile',
+      icon: 'share',
+      color: '#00E676',
+      onPress: () => console.log('Share'),
+    },
+  ];
 
   return (
     <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Modern Profile Header */}
-        <View style={[styles.modernHeader, {backgroundColor: theme.background}]}>
-          <View style={styles.profileHeaderContent}>
-            <View style={styles.avatarSection}>
-              <Avatar.Text
-                size={88}
-                label="JD"
-                style={{backgroundColor: theme.primary}}
-                labelStyle={styles.modernAvatarLabel}
-              />
-              <View style={[styles.onlineBadge, {backgroundColor: theme.success}]}>
-                <Icon name="circle" size={8} color={theme.background} />
-              </View>
+        {/* Cover Photo + Avatar Section */}
+        <View style={styles.coverSection}>
+          <View style={[styles.coverPhoto, {backgroundColor: theme.primary}]}>
+            {/* Clean gradient background */}
+          </View>
+          
+          <View style={styles.avatarContainer}>
+            <Avatar.Text
+              size={100}
+              label="JD"
+              style={[styles.avatar, {backgroundColor: theme.secondary}]}
+              labelStyle={styles.avatarLabel}
+            />
+            <View style={[styles.onlineBadge, {backgroundColor: theme.success}]}>
+              <Icon name="bolt" size={14} color="#FFFFFF" />
             </View>
-            <View style={styles.profileDetails}>
-              <Text style={[styles.modernProfileName, {color: theme.text}]} variant="headlineMedium">
-                John Doe
-              </Text>
-              <Text style={[styles.profileEmail, {color: theme.textSecondary}]} variant="bodyMedium">
-                john.doe@example.com
-              </Text>
-              <View style={styles.statusContainer}>
-                <Chip 
-                  mode="outlined" 
-                  compact
-                  style={[styles.statusChip, {borderColor: theme.success}]}
-                  textStyle={{color: theme.success, fontSize: 12}}
-                  icon={() => <Icon name="circle" size={8} color={theme.success} />}
-                >
-                  Online
-                </Chip>
-              </View>
-            </View>
+            <TouchableOpacity style={[styles.editAvatarButton, {backgroundColor: theme.primary}]}>
+              <Icon name="camera-alt" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* User Info */}
+        <View style={styles.userInfoSection}>
+          <Text style={[styles.userName, {color: theme.text}]} variant="headlineMedium">
+            {userInfo.name}
+          </Text>
+          <Text style={[styles.userUsername, {color: theme.textSecondary}]} variant="bodyLarge">
+            {userInfo.username}
+          </Text>
+          
+          <View style={styles.statusChipContainer}>
+            <Chip 
+              mode="flat" 
+              compact
+              style={[styles.statusChip, {backgroundColor: theme.success + '20'}]}
+              textStyle={{color: theme.success, fontSize: 13, fontWeight: '600'}}
+              icon={() => <Icon name="circle" size={8} color={theme.success} />}
+            >
+              Active Now
+            </Chip>
+          </View>
+
+          <Text style={[styles.userBio, {color: theme.text}]} variant="bodyMedium">
+            {userInfo.bio}
+          </Text>
+          
+          <View style={styles.metaInfo}>
+            <Icon name="location-on" size={16} color={theme.textSecondary} />
+            <Text style={[styles.metaText, {color: theme.textSecondary}]}>
+              San Francisco, CA
+            </Text>
+            <Text style={[styles.metaText, {color: theme.textSecondary}]}>
+              • {userInfo.joined}
+            </Text>
           </View>
         </View>
 
         {/* Stats Card */}
-        {renderStatsCard()}
+        <Surface style={[styles.statsCard, {backgroundColor: theme.surface}]} elevation={2}>
+          <View style={styles.statsContainer}>
+            {userStats.map((stat) => (
+              <TouchableOpacity key={stat.label} style={styles.statItem} activeOpacity={0.7}>
+                <View style={[styles.statIconContainer, {backgroundColor: stat.color + '20'}]}>
+                  <Icon name={stat.icon} size={24} color={stat.color} />
+                </View>
+                <Text style={[styles.statValue, {color: theme.text}]} variant="headlineSmall">
+                  {stat.value}
+                </Text>
+                <Text style={[styles.statLabel, {color: theme.textSecondary}]} variant="bodySmall">
+                  {stat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Surface>
 
-        {/* Profile Sections */}
-        <View style={styles.sectionsContainer}>
-          {profileSections.map(renderSection)}
+        {/* Interests Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Icon name="favorite" size={20} color={theme.primary} />
+            <Text style={[styles.sectionTitle, {color: theme.text}]} variant="titleMedium">
+              Interests & Hobbies
+            </Text>
+          </View>
+          <View style={styles.interestsContainer}>
+            {interests.map((interest) => (
+              <Chip
+                key={interest.id}
+                mode="flat"
+                style={[styles.interestChip, {backgroundColor: interest.color + '15'}]}
+                textStyle={{color: theme.text, fontWeight: '600'}}
+                icon={() => <Icon name={interest.icon} size={16} color={interest.color} />}
+                onPress={() => console.log(interest.label)}
+              >
+                {interest.label}
+              </Chip>
+            ))}
+          </View>
         </View>
 
-        {/* Footer Actions */}
-        <View style={styles.modernFooter}>
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Icon name="bolt" size={20} color={theme.primary} />
+            <Text style={[styles.sectionTitle, {color: theme.text}]} variant="titleMedium">
+              Quick Actions
+            </Text>
+          </View>
+          <View style={styles.quickActionsContainer}>
+            {quickActions.map((action) => (
+              <TouchableRipple
+                key={action.id}
+                onPress={action.onPress}
+                style={styles.actionRipple}
+                rippleColor={action.color + '20'}
+              >
+                <Surface style={[styles.actionCard, {backgroundColor: theme.surface}]} elevation={1}>
+                  <View style={[styles.actionIconContainer, {backgroundColor: action.color + '15'}]}>
+                    <Icon name={action.icon} size={24} color={action.color} />
+                  </View>
+                  <Text style={[styles.actionTitle, {color: theme.text}]} variant="bodyMedium">
+                    {action.title}
+                  </Text>
+                </Surface>
+              </TouchableRipple>
+            ))}
+          </View>
+        </View>
+
+        {/* Logout Button */}
+        <View style={styles.footer}>
           <Button
             mode="outlined"
             onPress={() => console.log('Logout')}
-            style={[styles.modernLogoutButton, {borderColor: theme.error}]}
-            labelStyle={{color: theme.error, fontWeight: '600'}}
-            icon={() => <Icon name="logout" size={18} color={theme.error} />}
+            style={[styles.logoutButton, {borderColor: theme.error}]}
+            labelStyle={{color: theme.error, fontWeight: '600', fontSize: 15}}
+            icon={() => <Icon name="logout" size={20} color={theme.error} />}
           >
             Logout
           </Button>
 
-          <Text style={[styles.modernVersion, {color: theme.textSecondary}]} variant="bodySmall">
-            ChatApp v1.0.0 • Built with ❤️
+          <Text style={[styles.version, {color: theme.textSecondary}]} variant="bodySmall">
+            ChatApp v1.0.0
           </Text>
         </View>
       </ScrollView>
@@ -237,58 +229,95 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   
-  // Modern Header
-  modernHeader: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-  },
-  profileHeaderContent: {
-    alignItems: 'center',
-  },
-  avatarSection: {
+  // Cover & Avatar Section
+  coverSection: {
     position: 'relative',
-    marginBottom: 16,
+    marginBottom: 60,
   },
-  modernAvatarLabel: {
-    fontSize: 32,
+  coverPhoto: {
+    height: 180,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  avatarContainer: {
+    position: 'absolute',
+    bottom: -50,
+    alignSelf: 'center',
+  },
+  avatar: {
+    borderWidth: 5,
+    borderColor: '#FFFFFF',
+  },
+  avatarLabel: {
+    fontSize: 36,
     fontWeight: '700',
   },
   onlineBadge: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: 5,
+    right: 5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#FFFFFF',
   },
-  profileDetails: {
+  editAvatarButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
   },
-  modernProfileName: {
+
+  // User Info Section
+  userInfoSection: {
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  userName: {
     fontWeight: '700',
     marginBottom: 4,
   },
-  profileEmail: {
-    marginBottom: 12,
-    opacity: 0.8,
+  userUsername: {
+    marginBottom: 8,
   },
-  statusContainer: {
-    alignItems: 'center',
+  statusChipContainer: {
+    marginBottom: 16,
   },
   statusChip: {
-    borderWidth: 1,
+    height: 28,
+  },
+  userBio: {
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 12,
+  },
+  metaInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  metaText: {
+    fontSize: 13,
   },
 
   // Stats Card
   statsCard: {
     marginHorizontal: 24,
     marginBottom: 24,
-    borderRadius: 16,
-    paddingVertical: 20,
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 12,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -298,83 +327,91 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   statValue: {
     fontWeight: '700',
-    marginTop: 8,
+    marginTop: 4,
     marginBottom: 2,
   },
   statLabel: {
     opacity: 0.8,
+    fontSize: 12,
   },
 
   // Sections
-  sectionsContainer: {
-    paddingHorizontal: 24,
-  },
   section: {
+    paddingHorizontal: 24,
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontWeight: '600',
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  sectionContent: {
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontWeight: '700',
   },
 
-  // Option Cards
-  optionRipple: {
-    borderRadius: 12,
-  },
-  optionCard: {
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  optionContent: {
+  // Interests
+  interestsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  optionLeft: {
+  interestChip: {
+    marginRight: 4,
+    marginBottom: 4,
+  },
+
+  // Quick Actions
+  quickActionsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 12,
+  },
+  actionRipple: {
     flex: 1,
+    borderRadius: 16,
   },
-  optionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  actionCard: {
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+  },
+  actionIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 8,
   },
-  optionTextContainer: {
-    flex: 1,
-  },
-  optionTitle: {
+  actionTitle: {
     fontWeight: '600',
-    marginBottom: 2,
-  },
-  optionSubtitle: {
-    opacity: 0.8,
-    lineHeight: 16,
+    textAlign: 'center',
   },
 
   // Footer
-  modernFooter: {
+  footer: {
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: 16,
     alignItems: 'center',
   },
-  modernLogoutButton: {
+  logoutButton: {
     marginBottom: 20,
     width: '100%',
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: 16,
+    borderWidth: 2,
+    paddingVertical: 4,
   },
-  modernVersion: {
+  version: {
     textAlign: 'center',
     opacity: 0.7,
   },

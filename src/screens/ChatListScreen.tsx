@@ -29,7 +29,7 @@ const mockChats = [
     unreadCount: 2,
     isOnline: true,
     isTyping: false,
-    avatarColor: '#FF5757',
+    avatarColor: '#FF6B9D',
   },
   {
     id: '2',
@@ -39,7 +39,7 @@ const mockChats = [
     unreadCount: 0,
     isOnline: false,
     isTyping: false,
-    avatarColor: '#2EC4B6',
+    avatarColor: '#A855F7',
   },
   {
     id: '3',
@@ -49,7 +49,7 @@ const mockChats = [
     unreadCount: 1,
     isOnline: true,
     isTyping: false,
-    avatarColor: '#7B68EE',
+    avatarColor: '#4ECDC4',
   },
   {
     id: '4',
@@ -59,7 +59,7 @@ const mockChats = [
     unreadCount: 0,
     isOnline: true,
     isTyping: true,
-    avatarColor: '#FF6B9D',
+    avatarColor: '#FF9F43',
   },
   {
     id: '5',
@@ -69,7 +69,7 @@ const mockChats = [
     unreadCount: 5,
     isOnline: false,
     isTyping: false,
-    avatarColor: '#9C88FF',
+    avatarColor: '#54A0FF',
   },
   {
     id: '6',
@@ -89,7 +89,7 @@ const mockChats = [
     unreadCount: 0,
     isOnline: true,
     isTyping: false,
-    avatarColor: '#20C997',
+    avatarColor: '#00D2D3',
   },
 ];
 
@@ -108,22 +108,31 @@ const ChatListScreen = () => {
       backgroundColor: theme.background,
     },
     header: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 12,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 16,
       backgroundColor: theme.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.border + '20',
+      borderBottomWidth: 0,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+    },
+    headerTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 12,
     },
     headerTitle: {
-      fontSize: 28,
-      fontWeight: '700',
+      fontSize: 32,
+      fontWeight: '800',
       color: theme.text,
-      marginBottom: 12,
     },
     searchBar: {
       backgroundColor: theme.background,
-      borderRadius: 10,
+      borderRadius: 16,
       elevation: 0,
     },
     searchInput: {
@@ -131,59 +140,59 @@ const ChatListScreen = () => {
       fontSize: 16,
     },
     listContainer: {
-      paddingBottom: 80,
+      paddingBottom: 20,
     },
     chatItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: 20,
+      paddingVertical: 14,
       backgroundColor: theme.surface,
       borderBottomWidth: 1,
-      borderBottomColor: theme.border + '15',
+      borderBottomColor: theme.border,
     },
     avatarContainer: {
       position: 'relative',
-      marginRight: 12,
+      marginRight: 14,
     },
     avatar: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       justifyContent: 'center',
       alignItems: 'center',
     },
     avatarText: {
       color: '#FFFFFF',
-      fontSize: 18,
-      fontWeight: '600',
+      fontSize: 20,
+      fontWeight: '700',
     },
     onlineIndicator: {
       position: 'absolute',
-      bottom: 0,
-      right: 0,
-      width: 14,
-      height: 14,
-      borderRadius: 7,
-      backgroundColor: '#10B981',
-      borderWidth: 2,
+      bottom: 2,
+      right: 2,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: theme.success,
+      borderWidth: 3,
       borderColor: theme.surface,
     },
     unreadBadge: {
       position: 'absolute',
-      top: -2,
-      right: -2,
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: '#FF3B30',
+      top: -4,
+      right: -4,
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: theme.primary,
       justifyContent: 'center',
       alignItems: 'center',
     },
     unreadBadgeText: {
       color: '#FFFFFF',
       fontSize: 11,
-      fontWeight: '700',
+      fontWeight: '800',
     },
     chatContent: {
       flex: 1,
@@ -193,22 +202,22 @@ const ChatListScreen = () => {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 4,
+      marginBottom: 5,
     },
     chatName: {
       fontSize: 17,
-      fontWeight: '600',
+      fontWeight: '700',
       color: theme.text,
       flex: 1,
     },
     chatTime: {
       fontSize: 13,
-      color: '#8E8E93',
+      color: theme.textSecondary,
       marginLeft: 8,
     },
     chatTimeUnread: {
-      color: '#FF3B30',
-      fontWeight: '600',
+      color: theme.primary,
+      fontWeight: '700',
     },
     lastMessageRow: {
       flexDirection: 'row',
@@ -216,17 +225,18 @@ const ChatListScreen = () => {
     },
     lastMessage: {
       fontSize: 15,
-      color: '#8E8E93',
+      color: theme.textSecondary,
       flex: 1,
     },
     lastMessageUnread: {
       color: theme.text,
-      fontWeight: '500',
+      fontWeight: '600',
     },
     typingIndicator: {
       fontSize: 15,
-      color: '#FF3B30',
+      color: theme.primary,
       fontStyle: 'italic',
+      fontWeight: '600',
     },
     emptyContainer: {
       flex: 1,
@@ -236,12 +246,14 @@ const ChatListScreen = () => {
     },
     emptyText: {
       fontSize: 16,
-      color: '#8E8E93',
+      color: theme.textSecondary,
       marginTop: 12,
     },
   });
 
-  const ChatItem = ({item, onPress}) => {
+  type ChatItemType = typeof mockChats[0];
+
+  const ChatItem = ({item, onPress}: {item: ChatItemType; onPress: (item: ChatItemType) => void}) => {
     const hasUnread = item.unreadCount > 0;
     const initials = getInitials(item.name);
     
@@ -305,11 +317,11 @@ const ChatListScreen = () => {
     );
   };
 
-  const handleChatPress = (chat) => {
+  const handleChatPress = (chat: ChatItemType) => {
     console.log('Chat pressed:', chat.name);
   };
 
-  const renderChatItem = ({item}) => (
+  const renderChatItem = ({item}: {item: ChatItemType}) => (
     <ChatItem item={item} onPress={handleChatPress} />
   );
 
@@ -321,16 +333,19 @@ const ChatListScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chats</Text>
+        <View style={styles.headerTitleRow}>
+          <Icon name="chat-bubble" size={32} color={theme.primary} />
+          <Text style={styles.headerTitle}>Chats</Text>
+        </View>
         <Searchbar
           placeholder="Search chats..."
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchBar}
           inputStyle={styles.searchInput}
-          iconColor="#8E8E93"
+          iconColor={theme.primary}
         />
       </View>
 

@@ -14,15 +14,15 @@ export interface Theme {
 }
 
 const defaultTheme: Theme = {
-  primary: '#007AFF', // Modern blue - great contrast with white text
-  secondary: '#5856D6', // Purple accent
-  background: '#FFFFFF',
-  surface: '#F8F9FA',
-  text: '#1C1C1E',
-  textSecondary: '#8E8E93',
-  border: '#E5E5EA',
-  error: '#FF3B30',
-  success: '#34C759',
+  primary: '#FF3B8B', // Vibrant pink - fun and social
+  secondary: '#A855F7', // Purple magic
+  background: '#FAFAFA',
+  surface: '#FFFFFF',
+  text: '#1F1F1F',
+  textSecondary: '#666666',
+  border: '#EEEEEE',
+  error: '#FF5252',
+  success: '#00E676',
 };
 
 interface ThemeContextType {
