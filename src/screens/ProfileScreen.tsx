@@ -1,108 +1,227 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {Text, Surface, Avatar, List, Button} from 'react-native-paper';
+import {Text, Surface, Avatar, Button, TouchableRipple, Switch, Chip} from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useTheme} from '../contexts/ThemeContext';
+
+const {width} = Dimensions.get('window');
 
 const ProfileScreen: React.FC = () => {
   const {theme} = useTheme();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
 
-  const profileOptions = [
+  // User stats
+  const userStats = [
+    { label: 'Friends', value: '324', icon: 'people' },
+    { label: 'Chats', value: '127', icon: 'chat' },
+    { label: 'Groups', value: '8', icon: 'group' },
+  ];
+
+  const profileSections = [
     {
-      id: '1',
-      title: 'Edit Profile',
-      icon: '👤',
-      onPress: () => console.log('Edit Profile'),
+      id: 'account',
+      title: 'Account',
+      options: [
+        {
+          id: 'edit-profile',
+          title: 'Edit Profile',
+          subtitle: 'Update your personal information',
+          icon: 'person-outline',
+          onPress: () => console.log('Edit Profile'),
+          hasSwitch: false,
+        },
+        {
+          id: 'privacy',
+          title: 'Privacy & Security',
+          subtitle: 'Manage your privacy settings',
+          icon: 'lock-outline',
+          onPress: () => console.log('Privacy'),
+          hasSwitch: false,
+        },
+      ],
     },
     {
-      id: '2',
-      title: 'Notifications',
-      icon: '🔔',
-      onPress: () => console.log('Notifications'),
+      id: 'preferences',
+      title: 'Preferences',
+      options: [
+        {
+          id: 'notifications',
+          title: 'Notifications',
+          subtitle: 'Push notifications and alerts',
+          icon: 'notifications-outline',
+          onPress: () => setNotificationsEnabled(!notificationsEnabled),
+          hasSwitch: true,
+          switchValue: notificationsEnabled,
+        },
+        {
+          id: 'theme',
+          title: 'Dark Mode',
+          subtitle: 'Toggle dark theme',
+          icon: 'dark-mode',
+          onPress: () => setDarkMode(!darkMode),
+          hasSwitch: true,
+          switchValue: darkMode,
+        },
+      ],
     },
     {
-      id: '3',
-      title: 'Privacy & Security',
-      icon: '🔒',
-      onPress: () => console.log('Privacy'),
-    },
-    {
-      id: '4',
-      title: 'Theme Settings',
-      icon: '🎨',
-      onPress: () => console.log('Theme'),
-    },
-    {
-      id: '5',
-      title: 'Help & Support',
-      icon: '❓',
-      onPress: () => console.log('Help'),
-    },
-    {
-      id: '6',
-      title: 'About',
-      icon: 'ℹ️',
-      onPress: () => console.log('About'),
+      id: 'support',
+      title: 'Support',
+      options: [
+        {
+          id: 'help',
+          title: 'Help & Support',
+          subtitle: 'Get help and contact support',
+          icon: 'help-outline',
+          onPress: () => console.log('Help'),
+          hasSwitch: false,
+        },
+        {
+          id: 'about',
+          title: 'About',
+          subtitle: 'App version and information',
+          icon: 'info-outline',
+          onPress: () => console.log('About'),
+          hasSwitch: false,
+        },
+      ],
     },
   ];
 
-  const handleOptionPress = (option: typeof profileOptions[0]) => {
-    option.onPress();
-  };
+  const renderStatsCard = () => (
+    <Surface style={[styles.statsCard, {backgroundColor: theme.surface}]} elevation={2}>
+      <View style={styles.statsContainer}>
+        {userStats.map((stat, index) => (
+          <View key={stat.label} style={styles.statItem}>
+            <Icon name={stat.icon} size={24} color={theme.primary} />
+            <Text style={[styles.statValue, {color: theme.text}]} variant="headlineSmall">
+              {stat.value}
+            </Text>
+            <Text style={[styles.statLabel, {color: theme.textSecondary}]} variant="bodySmall">
+              {stat.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </Surface>
+  );
 
-  const renderProfileOption = (option: typeof profileOptions[0]) => (
-    <List.Item
+  const renderProfileOption = (option: any) => (
+    <TouchableRipple
       key={option.id}
-      title={option.title}
-      left={() => <List.Icon icon="account" />}
-      right={() => <List.Icon icon="chevron-right" />}
-      onPress={() => handleOptionPress(option)}
-      titleStyle={{color: theme.text}}
-    />
+      onPress={option.onPress}
+      style={styles.optionRipple}
+      rippleColor={theme.primary + '15'}
+    >
+      <Surface style={[styles.optionCard, {backgroundColor: theme.surface}]} elevation={1}>
+        <View style={styles.optionContent}>
+          <View style={styles.optionLeft}>
+            <View style={[styles.optionIconContainer, {backgroundColor: theme.primary + '15'}]}>
+              <Icon name={option.icon} size={20} color={theme.primary} />
+            </View>
+            <View style={styles.optionTextContainer}>
+              <Text style={[styles.optionTitle, {color: theme.text}]} variant="bodyLarge">
+                {option.title}
+              </Text>
+              <Text style={[styles.optionSubtitle, {color: theme.textSecondary}]} variant="bodySmall">
+                {option.subtitle}
+              </Text>
+            </View>
+          </View>
+          {option.hasSwitch ? (
+            <Switch
+              value={option.switchValue}
+              onValueChange={option.onPress}
+              thumbColor={option.switchValue ? theme.primary : theme.textSecondary}
+              trackColor={{false: theme.border, true: theme.primary + '40'}}
+            />
+          ) : (
+            <Icon name="chevron-right" size={20} color={theme.textSecondary} />
+          )}
+        </View>
+      </Surface>
+    </TouchableRipple>
+  );
+
+  const renderSection = (section: any) => (
+    <View key={section.id} style={styles.section}>
+      <Text style={[styles.sectionTitle, {color: theme.text}]} variant="titleMedium">
+        {section.title}
+      </Text>
+      <View style={styles.sectionContent}>
+        {section.options.map(renderProfileOption)}
+      </View>
+    </View>
   );
 
   return (
     <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Surface style={[styles.header, {backgroundColor: theme.surface}]} elevation={2}>
-          <View style={styles.profileHeader}>
-            <Avatar.Text
-              size={80}
-              label="👤"
-              style={{backgroundColor: theme.primary}}
-              labelStyle={styles.avatarLabel}
-            />
-            <View style={styles.profileInfo}>
-              <Text style={[styles.profileName, {color: theme.text}]} variant="headlineSmall">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Modern Profile Header */}
+        <View style={[styles.modernHeader, {backgroundColor: theme.background}]}>
+          <View style={styles.profileHeaderContent}>
+            <View style={styles.avatarSection}>
+              <Avatar.Text
+                size={88}
+                label="JD"
+                style={{backgroundColor: theme.primary}}
+                labelStyle={styles.modernAvatarLabel}
+              />
+              <View style={[styles.onlineBadge, {backgroundColor: theme.success}]}>
+                <Icon name="circle" size={8} color={theme.background} />
+              </View>
+            </View>
+            <View style={styles.profileDetails}>
+              <Text style={[styles.modernProfileName, {color: theme.text}]} variant="headlineMedium">
                 John Doe
               </Text>
-              <Text style={[styles.profileStatus, {color: theme.textSecondary}]} variant="bodyMedium">
-                Online
+              <Text style={[styles.profileEmail, {color: theme.textSecondary}]} variant="bodyMedium">
+                john.doe@example.com
               </Text>
+              <View style={styles.statusContainer}>
+                <Chip 
+                  mode="outlined" 
+                  compact
+                  style={[styles.statusChip, {borderColor: theme.success}]}
+                  textStyle={{color: theme.success, fontSize: 12}}
+                  icon={() => <Icon name="circle" size={8} color={theme.success} />}
+                >
+                  Online
+                </Chip>
+              </View>
             </View>
           </View>
-        </Surface>
-
-        <View style={styles.optionsContainer}>
-          {profileOptions.map(renderProfileOption)}
         </View>
 
-        <View style={styles.footer}>
+        {/* Stats Card */}
+        {renderStatsCard()}
+
+        {/* Profile Sections */}
+        <View style={styles.sectionsContainer}>
+          {profileSections.map(renderSection)}
+        </View>
+
+        {/* Footer Actions */}
+        <View style={styles.modernFooter}>
           <Button
             mode="outlined"
             onPress={() => console.log('Logout')}
-            style={[styles.logoutButton, {borderColor: theme.error}]}
-            textColor={theme.error}
+            style={[styles.modernLogoutButton, {borderColor: theme.error}]}
+            labelStyle={{color: theme.error, fontWeight: '600'}}
+            icon={() => <Icon name="logout" size={18} color={theme.error} />}
           >
             Logout
           </Button>
 
-          <Text style={[styles.version, {color: theme.textSecondary}]} variant="bodySmall">
-            Version 1.0.0
+          <Text style={[styles.modernVersion, {color: theme.textSecondary}]} variant="bodySmall">
+            ChatApp v1.0.0 • Built with ❤️
           </Text>
         </View>
       </ScrollView>
@@ -114,43 +233,150 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-    marginBottom: 8,
+  scrollContent: {
+    paddingBottom: 24,
   },
-  profileHeader: {
-    flexDirection: 'row',
+  
+  // Modern Header
+  modernHeader: {
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  profileHeaderContent: {
     alignItems: 'center',
   },
-  profileInfo: {
-    flex: 1,
-    marginLeft: 20,
+  avatarSection: {
+    position: 'relative',
+    marginBottom: 16,
   },
-  profileName: {
-    fontWeight: 'bold',
+  modernAvatarLabel: {
+    fontSize: 32,
+    fontWeight: '700',
+  },
+  onlineBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  profileDetails: {
+    alignItems: 'center',
+  },
+  modernProfileName: {
+    fontWeight: '700',
     marginBottom: 4,
   },
-  profileStatus: {
+  profileEmail: {
+    marginBottom: 12,
+    opacity: 0.8,
   },
-  optionsContainer: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 40,
+  statusContainer: {
     alignItems: 'center',
   },
-  logoutButton: {
+  statusChip: {
+    borderWidth: 1,
+  },
+
+  // Stats Card
+  statsCard: {
+    marginHorizontal: 24,
+    marginBottom: 24,
+    borderRadius: 16,
+    paddingVertical: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontWeight: '700',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  statLabel: {
+    opacity: 0.8,
+  },
+
+  // Sections
+  sectionsContainer: {
+    paddingHorizontal: 24,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontWeight: '600',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  sectionContent: {
+    gap: 8,
+  },
+
+  // Option Cards
+  optionRipple: {
+    borderRadius: 12,
+  },
+  optionCard: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  optionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  optionTextContainer: {
+    flex: 1,
+  },
+  optionTitle: {
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  optionSubtitle: {
+    opacity: 0.8,
+    lineHeight: 16,
+  },
+
+  // Footer
+  modernFooter: {
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    alignItems: 'center',
+  },
+  modernLogoutButton: {
     marginBottom: 20,
     width: '100%',
+    borderRadius: 12,
+    borderWidth: 1.5,
   },
-  version: {
-  },
-  avatarLabel: {
-    fontSize: 36,
+  modernVersion: {
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });
 

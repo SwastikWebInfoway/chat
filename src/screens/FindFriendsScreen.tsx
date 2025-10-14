@@ -45,64 +45,66 @@ const FriendSuggestion: React.FC<FriendSuggestionProps> = ({item, onAddFriend}) 
     setTimeout(() => {
       onAddFriend(item);
       setIsAdding(false);
-    }, 1000);
+    }, 800);
+  };
+
+  const handleCardPress = () => {
+    console.log('View profile:', item.name);
+    // Future profile view implementation
   };
 
   return (
-    <Surface style={[styles.modernCard, {backgroundColor: theme.background}]} elevation={2}>
-      <View style={styles.cardHeader}>
-        <View style={styles.avatarContainer}>
-          <Avatar.Text
-            size={56}
-            label={item.name.split(' ').map(n => n[0]).join('')}
-            style={{backgroundColor: item.avatarColor}}
-            labelStyle={styles.avatarText}
-          />
-          {item.isOnline && (
-            <View style={[styles.onlineIndicator, {backgroundColor: theme.success}]} />
-          )}
-        </View>
-        <View style={styles.userInfo}>
-          <Text style={[styles.modernName, {color: theme.text}]} variant="titleMedium">
-            {item.name}
-          </Text>
-          <Text style={[styles.modernUsername, {color: theme.textSecondary}]} variant="bodySmall">
-            {item.username}
-          </Text>
-          <Text style={[styles.userStatus, {color: theme.textSecondary}]} variant="bodySmall">
-            {item.status}
-          </Text>
-        </View>
-      </View>
+    <TouchableRipple
+      onPress={handleCardPress}
+      style={styles.compactCardRipple}
+      rippleColor={theme.primary + '10'}
+    >
+      <Surface style={[styles.compactCard, {backgroundColor: theme.surface}]} elevation={1}>
+        <View style={styles.compactContent}>
+          <View style={styles.compactAvatarContainer}>
+            <Avatar.Text
+              size={44}
+              label={item.name.split(' ').map(n => n[0]).join('')}
+              style={{backgroundColor: item.avatarColor}}
+              labelStyle={styles.compactAvatarText}
+            />
+            {item.isOnline && (
+              <View style={[styles.compactOnlineIndicator, {backgroundColor: theme.success}]} />
+            )}
+          </View>
+          
+          <View style={styles.compactUserInfo}>
+            <Text style={[styles.compactName, {color: theme.text}]} variant="titleSmall" numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={[styles.compactUsername, {color: theme.textSecondary}]} variant="bodySmall" numberOfLines={1}>
+              {item.username}
+            </Text>
+            <View style={styles.compactMutualContainer}>
+              <Icon name="people" size={12} color={theme.textSecondary} />
+              <Text style={[styles.compactMutualText, {color: theme.textSecondary}]} variant="bodySmall">
+                {item.mutualFriends} mutual
+              </Text>
+            </View>
+          </View>
 
-      <View style={styles.mutualFriendsContainer}>
-        <Icon name="people" size={14} color={theme.textSecondary} />
-        <Text style={[styles.mutualFriendsText, {color: theme.textSecondary}]} variant="bodySmall">
-          {item.mutualFriends} mutual friends
-        </Text>
-      </View>
-
-      <View style={styles.actionContainer}>
-        <Button
-          mode="outlined"
-          onPress={handleAddFriend}
-          loading={isAdding}
-          disabled={isAdding}
-          style={[styles.modernAddButton, {borderColor: theme.primary}]}
-          labelStyle={{color: theme.primary, fontSize: 13, fontWeight: '600'}}
-        >
-          {isAdding ? 'Adding...' : 'Add Friend'}
-        </Button>
-        <Button
-          mode="text"
-          onPress={() => console.log('View profile')}
-          style={styles.profileButton}
-          labelStyle={{color: theme.textSecondary, fontSize: 13}}
-        >
-          View
-        </Button>
-      </View>
-    </Surface>
+          <TouchableRipple
+            onPress={handleAddFriend}
+            style={[styles.compactAddButton, {backgroundColor: isAdding ? theme.primary + '20' : theme.primary}]}
+            rippleColor={theme.background + '30'}
+            disabled={isAdding}
+          >
+            <View style={styles.addButtonContent}>
+              {isAdding ? (
+                <Icon name="hourglass-empty" size={18} color={theme.background} />
+              ) : (
+                <Icon name="add" size={18} color={theme.background} />
+              )}
+            </View>
+          </TouchableRipple>
+        </View>
+      </Surface>
+    </TouchableRipple>
   );
 };
 
@@ -215,7 +217,7 @@ const FindFriendsScreen: React.FC = () => {
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={{height: 16}} />}
+        ItemSeparatorComponent={() => <View style={{height: 8}} />}
         ListHeaderComponent={() => (
           <View style={styles.resultsHeader}>
             <Text style={[styles.resultsTitle, {color: theme.text}]} variant="titleMedium">
@@ -250,70 +252,203 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
+  modernHeader: {
+    paddingHorizontal: 24,
     paddingVertical: 20,
-    marginBottom: 8,
   },
-  headerTitle: {
-    fontWeight: 'bold',
+  modernHeaderTitle: {
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  scrollContent: {
-    flexGrow: 1,
+  headerSubtitle: {
+    opacity: 0.8,
   },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  searchSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
   },
-  searchInput: {
-    backgroundColor: 'transparent',
+  modernSearchInput: {
+    marginBottom: 16,
   },
-  suggestionsHeader: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  filtersContainer: {
+    marginTop: 8,
   },
-  suggestionsTitle: {
+  filtersContent: {
+    paddingRight: 24,
+  },
+  filterChip: {
+    marginRight: 12,
+    height: 36,
+  },
+  listContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+  },
+  resultsHeader: {
+    marginBottom: 20,
+  },
+  resultsTitle: {
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  filterInfo: {
+    fontStyle: 'italic',
+  },
+  modernCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  avatarText: {
+    fontSize: 20,
     fontWeight: '600',
   },
-  listContainer: {
-    paddingBottom: 20,
-    paddingHorizontal: 16,
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
-  suggestionRipple: {
-    marginVertical: 4,
-    marginHorizontal: 16,
-    borderRadius: 12,
-  },
-  suggestionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 16,
-  },
-  friendInfo: {
+  userInfo: {
     flex: 1,
     marginLeft: 16,
+    justifyContent: 'center',
   },
-  friendName: {
+  modernName: {
     fontWeight: '600',
     marginBottom: 2,
   },
-  friendUsername: {
+  modernUsername: {
+    marginBottom: 4,
   },
-  addButton: {
-    borderRadius: 20,
+  userStatus: {
+    fontStyle: 'italic',
+    opacity: 0.8,
   },
-  emptyContainer: {
+  mutualFriendsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  mutualFriendsText: {
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modernAddButton: {
+    flex: 1,
+    marginRight: 12,
+    borderRadius: 25,
+    borderWidth: 1.5,
+  },
+  profileButton: {
+    paddingHorizontal: 16,
+  },
+  // Compact Card Styles
+  compactCardRipple: {
+    borderRadius: 12,
+  },
+  compactCard: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  compactContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  compactAvatarContainer: {
+    position: 'relative',
+  },
+  compactAvatarText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  compactOnlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  compactUserInfo: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  compactName: {
+    fontWeight: '600',
+    marginBottom: 1,
+  },
+  compactUsername: {
+    marginBottom: 3,
+    opacity: 0.8,
+  },
+  compactMutualContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  compactMutualText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  compactAddButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modernEmptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
   },
   emptyText: {
     textAlign: 'center',
-  },
-  avatarLabel: {
-    fontSize: 24,
+    lineHeight: 20,
   },
 });
 

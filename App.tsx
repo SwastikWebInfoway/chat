@@ -17,7 +17,6 @@ import LoginScreen from './src/screens/LoginScreen';
 import SignupScreen from './src/screens/SignupScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import FindFriendsScreen from './src/screens/FindFriendsScreen';
-import CallsScreen from './src/screens/CallsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -32,9 +31,7 @@ const FriendsIcon = ({color, size}: {color: string; size: number}) => (
   <Icon name="people" color={color} size={size} />
 );
 
-const CallsIcon = ({color, size}: {color: string; size: number}) => (
-  <Icon name="call" color={color} size={size} />
-);
+
 
 const ProfileIcon = ({color, size}: {color: string; size: number}) => (
   <Icon name="person" color={color} size={size} />
@@ -48,6 +45,7 @@ const styles = StyleSheet.create({
 
 function TabNavigator() {
   const {theme} = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -65,8 +63,8 @@ function TabNavigator() {
           shadowOpacity: 0.1,
           shadowRadius: 4,
           paddingTop: 8,
-          paddingBottom: 8,
-          height: 64,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          height: 64 + (insets.bottom > 0 ? insets.bottom : 0),
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -95,15 +93,7 @@ function TabNavigator() {
           tabBarIcon: FriendsIcon,
         }}
       />
-      <Tab.Screen
-        name="Calls"
-        component={CallsScreen}
-        options={{
-          tabBarLabel: 'Calls',
-          headerTitle: 'Calls',
-          tabBarIcon: CallsIcon,
-        }}
-      />
+
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
