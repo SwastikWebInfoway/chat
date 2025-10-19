@@ -8,6 +8,7 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {Provider as PaperProvider} from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {ThemeProvider, useTheme} from './src/contexts/ThemeContext';
+import {PermissionProvider} from './src/hooks/usePermissions';
 import AuthScreen from './src/screens/AuthScreen';
 import ChatListScreen from './src/screens/ChatListScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -141,9 +142,11 @@ function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <PaperProvider>
-          <AppContent />
-        </PaperProvider>
+        <PermissionProvider>
+          <PaperProvider>
+            <AppContent />
+          </PaperProvider>
+        </PermissionProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

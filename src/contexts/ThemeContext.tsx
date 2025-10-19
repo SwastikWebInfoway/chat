@@ -11,6 +11,7 @@ export interface Theme {
   border: string;
   error: string;
   success: string;
+  warning: string;
 }
 
 const defaultTheme: Theme = {
@@ -23,6 +24,7 @@ const defaultTheme: Theme = {
   border: '#EEEEEE',
   error: '#FF5252',
   success: '#00E676',
+  warning: '#FF9800',
 };
 
 interface ThemeContextType {
