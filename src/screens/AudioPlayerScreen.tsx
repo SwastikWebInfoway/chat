@@ -32,8 +32,10 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
   const [totalDuration, setTotalDuration] = useState(0);
   const soundRef = useRef<Sound | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     // Initialize sound
     Sound.setCategory('Playback');
     
@@ -42,28 +44,40 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
       soundRef.current = new Sound(audioUri, '', (error) => {
         if (error) {
           console.error('Failed to load sound:', error);
-          Alert.alert('Playback Error', 'Failed to load audio file');
+          if (isMountedRef.current) {
+            Alert.alert('Playback Error', 'Failed to load audio file');
+          }
           return;
         }
         
         // Get duration from the loaded sound
-        const duration = soundRef.current?.getDuration() || 0;
-        setTotalDuration(duration);
+        if (soundRef.current && isMountedRef.current) {
+          const duration = soundRef.current.getDuration() || 0;
+          setTotalDuration(duration);
+        }
       });
     }
 
     return () => {
+      isMountedRef.current = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
       if (soundRef.current) {
-        soundRef.current.release();
+        try {
+          soundRef.current.stop(() => {});
+          soundRef.current.release();
+          soundRef.current = null;
+        } catch (error) {
+          console.warn('Error cleaning up audio:', error);
+        }
       }
     };
   }, [audioUri]);
 
   const togglePlayPause = () => {
-    if (!soundRef.current) return;
+    if (!soundRef.current || !isMountedRef.current) return;
     
     if (isPlaying) {
       // Pause
@@ -76,6 +90,8 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
     } else {
       // Play
       soundRef.current.play((success) => {
+        if (!isMountedRef.current) return;
+        
         if (success) {
           setIsPlaying(false);
           setCurrentTime(0);
@@ -94,10 +110,15 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
       
       // Update progress
       intervalRef.current = setInterval(() => {
-        if (soundRef.current) {
+        if (soundRef.current && isMountedRef.current) {
           soundRef.current.getCurrentTime((seconds) => {
-            setCurrentTime(seconds);
+            if (isMountedRef.current) {
+              setCurrentTime(seconds);
+            }
           });
+        } else if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       }, 100);
     }

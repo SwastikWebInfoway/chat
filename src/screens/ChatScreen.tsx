@@ -71,8 +71,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Sound | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isMountedRef = useRef(true);
+  const isStoppingRecordingRef = useRef(false);
 
   useEffect(() => {
+    isMountedRef.current = true;
     const parent = navigation?.getParent();
     if (parent) {
       parent.setOptions({
@@ -81,18 +84,45 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     }
     
     return () => {
+      isMountedRef.current = false;
       if (parent) {
         parent.setOptions({
           tabBarStyle: undefined
         });
       }
       
-      // Clean up recording if component unmounts
+      // Clean up recording timer
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      // Stop recording if active
+      if (isRecording) {
+        try {
+          AudioRecord.stop().catch(err => console.warn('Error stopping recording on unmount:', err));
+        } catch (error) {
+          console.warn('Error stopping recording on unmount:', error);
+        }
+      }
+      
+      // Clean up audio playback
+      if (soundRef.current) {
+        try {
+          soundRef.current.stop(() => {});
+          soundRef.current.release();
+          soundRef.current = null;
+        } catch (error) {
+          console.warn('Error cleaning up sound on unmount:', error);
+        }
+      }
+      
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
       }
     };
-  }, [navigation]);
+  }, [navigation, isRecording]);
 
   useEffect(() => {
     // Initialize audio recording
@@ -139,15 +169,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
 
   const scrollToBottom = (animated = true) => {
     setTimeout(() => {
-      if (flatListRef.current) {
+      if (flatListRef.current && isMountedRef.current) {
         flatListRef.current.scrollToEnd({animated});
       }
     }, 100);
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    // Only scroll on initial load, not on every message change
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [messages.length]); // Changed from [messages] to [messages.length]
   
   useEffect(() => {
     // Handle keyboard showing and hiding
@@ -170,11 +203,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     // Cleanup audio resources when component unmounts
     return () => {
       if (soundRef.current) {
-        soundRef.current.stop();
-        soundRef.current.release();
+        try {
+          soundRef.current.stop(() => {});
+          soundRef.current.release();
+          soundRef.current = null;
+        } catch (error) {
+          console.warn('Error cleaning up audio:', error);
+        }
       }
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
       }
     };
   }, []);
@@ -233,6 +272,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   };
   
   const handleRecordAudio = async () => {
+    // Prevent concurrent operations
+    if (isStoppingRecordingRef.current) {
+      console.log('Recording stop already in progress');
+      return;
+    }
+
     if (!permissions.microphone) {
       const granted = await requestMicrophonePermission();
       if (!granted) return;
@@ -240,32 +285,44 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
 
     if (isRecording) {
       // Stop recording
-      setIsRecording(false);
-      setRecordingTimer(0);
+      isStoppingRecordingRef.current = true;
+      const currentTimer = recordingTimer; // Capture current timer BEFORE clearing
       
+      // Clear interval first
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
       
+      // Update state
+      setIsRecording(false);
+      setRecordingTimer(0);
+      
       try {
         const audioFile = await AudioRecord.stop();
+        console.log('Recording stopped, file:', audioFile);
         
-        const newMessage: Message = {
-          id: Date.now().toString(),
-          text: '',
-          timestamp: new Date(),
-          isMine: true,
-          type: 'audio',
-          mediaUri: audioFile,
-          duration: `0:${Math.floor(recordingTimer / 1000).toString().padStart(2, '0')}`,
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        scrollToBottom();
+        if (isMountedRef.current) {
+          const newMessage: Message = {
+            id: Date.now().toString(),
+            text: '',
+            timestamp: new Date(),
+            isMine: true,
+            type: 'audio',
+            mediaUri: audioFile,
+            duration: `0:${Math.floor(currentTimer / 1000).toString().padStart(2, '0')}`,
+          };
+          
+          setMessages(prev => [...prev, newMessage]);
+          scrollToBottom();
+        }
       } catch (error) {
         console.error('Failed to stop recording:', error);
-        Alert.alert('Recording Error', 'Failed to save audio recording');
+        if (isMountedRef.current) {
+          Alert.alert('Recording Error', 'Failed to save audio recording');
+        }
+      } finally {
+        isStoppingRecordingRef.current = false;
       }
     } else {
       // Start recording
@@ -274,21 +331,68 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
       
       try {
         await AudioRecord.start();
+        console.log('Recording started');
         
         // Start timer
         recordingIntervalRef.current = setInterval(() => {
           setRecordingTimer(prev => {
-            if (prev >= 60000) { // Max 60 seconds
-              handleRecordAudio(); // Stop recording
-              return prev;
+            const newTime = prev + 1000;
+            
+            // Check if we've hit the max time
+            if (newTime >= 60000) {
+              // Stop automatically without recursive call
+              if (recordingIntervalRef.current) {
+                clearInterval(recordingIntervalRef.current);
+                recordingIntervalRef.current = null;
+              }
+              
+              // Stop recording asynchronously
+              if (!isStoppingRecordingRef.current) {
+                isStoppingRecordingRef.current = true;
+                setIsRecording(false);
+                
+                AudioRecord.stop()
+                  .then(audioFile => {
+                    console.log('Auto-stopped at 60s, file:', audioFile);
+                    if (isMountedRef.current) {
+                      const newMessage: Message = {
+                        id: Date.now().toString(),
+                        text: '',
+                        timestamp: new Date(),
+                        isMine: true,
+                        type: 'audio',
+                        mediaUri: audioFile,
+                        duration: '1:00', // 60 seconds
+                      };
+                      setMessages(prev => [...prev, newMessage]);
+                      scrollToBottom();
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Failed to stop recording at max time:', error);
+                    if (isMountedRef.current) {
+                      Alert.alert('Recording Error', 'Failed to save audio recording');
+                    }
+                  })
+                  .finally(() => {
+                    isStoppingRecordingRef.current = false;
+                    setRecordingTimer(0);
+                  });
+              }
+              
+              return newTime; // Keep last value
             }
-            return prev + 1000;
+            
+            return newTime;
           });
         }, 1000);
       } catch (error) {
         console.error('Failed to start recording:', error);
         setIsRecording(false);
-        Alert.alert('Recording Error', 'Failed to start audio recording');
+        setRecordingTimer(0);
+        if (isMountedRef.current) {
+          Alert.alert('Recording Error', 'Failed to start audio recording');
+        }
       }
     }
   };
@@ -297,7 +401,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     try {
       // Stop current playing audio if any
       if (soundRef.current) {
-        soundRef.current.stop();
+        soundRef.current.stop(() => {});
         soundRef.current.release();
         soundRef.current = null;
         if (progressIntervalRef.current) {
@@ -317,7 +421,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
       const sound = new Sound(audioUri, '', (error) => {
         if (error) {
           console.error('Failed to load sound:', error);
-          Alert.alert('Playback Error', 'Failed to load audio file');
+          if (isMountedRef.current) {
+            Alert.alert('Playback Error', 'Failed to load audio file');
+          }
+          return;
+        }
+
+        if (!isMountedRef.current) {
+          sound.release();
           return;
         }
 
@@ -326,6 +437,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
         setAudioProgress(0);
 
         sound.play((success) => {
+          if (!isMountedRef.current) return;
+          
           if (success) {
             console.log('Audio played successfully');
           } else {
@@ -341,8 +454,18 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
 
         // Start progress tracking
         progressIntervalRef.current = setInterval(() => {
+          if (!isMountedRef.current || !soundRef.current) {
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+              progressIntervalRef.current = null;
+            }
+            return;
+          }
+          
           sound.getCurrentTime((seconds) => {
-            setAudioProgress(seconds);
+            if (isMountedRef.current) {
+              setAudioProgress(seconds);
+            }
           });
         }, 100);
       });
@@ -350,7 +473,9 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
       soundRef.current = sound;
     } catch (error) {
       console.error('Failed to play audio:', error);
-      Alert.alert('Playback Error', 'Failed to play audio');
+      if (isMountedRef.current) {
+        Alert.alert('Playback Error', 'Failed to play audio');
+      }
     }
   };
 
@@ -664,7 +789,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.messagesList}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollToBottom()}
+          onContentSizeChange={() => {
+            // Don't auto-scroll on every content change to prevent infinite loops
+          }}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
         />
 
         {isUploading && (

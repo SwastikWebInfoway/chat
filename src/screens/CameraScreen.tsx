@@ -36,6 +36,7 @@ const CameraScreen: React.FC<CameraScreenProps> = ({navigation, route}) => {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pressStartTime = useRef<number>(0);
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const isMountedRef = useRef(true);
 
   const currentDevice = useCameraDevice(cameraType);
 
@@ -46,9 +47,12 @@ const CameraScreen: React.FC<CameraScreenProps> = ({navigation, route}) => {
   }, [hasPermission]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (recordingTimerRef.current) {
         clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
       }
     };
   }, []);
@@ -127,18 +131,25 @@ const CameraScreen: React.FC<CameraScreenProps> = ({navigation, route}) => {
         // Start timer
         recordingTimerRef.current = setInterval(() => {
           setRecordingTime(prev => {
-            if (prev >= 30) {
+            const newTime = prev + 1;
+            if (newTime >= 30) {
               // Auto-stop at 30 seconds
+              if (recordingTimerRef.current) {
+                clearInterval(recordingTimerRef.current);
+                recordingTimerRef.current = null;
+              }
               stopRecording();
-              return prev;
+              return prev; // Return previous value to avoid extra increment
             }
-            return prev + 1;
+            return newTime;
           });
         }, 1000);
 
         await camera.current.startRecording({
           flash: flash === 'on' ? 'on' : 'off',
           onRecordingFinished: (video) => {
+            if (!isMountedRef.current) return;
+            
             const uri = `file://${video.path}`;
             
             // Navigate to preview screen
@@ -155,18 +166,23 @@ const CameraScreen: React.FC<CameraScreenProps> = ({navigation, route}) => {
           },
           onRecordingError: (error) => {
             console.error('Recording error:', error);
-            Alert.alert('Error', 'Failed to record video');
-            setIsRecording(false);
+            if (isMountedRef.current) {
+              Alert.alert('Error', 'Failed to record video');
+              setIsRecording(false);
+            }
             if (recordingTimerRef.current) {
               clearInterval(recordingTimerRef.current);
+              recordingTimerRef.current = null;
             }
           },
         });
       }
     } catch (error) {
       console.error('Failed to start recording:', error);
-      Alert.alert('Error', 'Failed to start recording');
-      setIsRecording(false);
+      if (isMountedRef.current) {
+        Alert.alert('Error', 'Failed to start recording');
+        setIsRecording(false);
+      }
     }
   };
 
