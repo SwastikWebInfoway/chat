@@ -35,6 +35,7 @@ interface Message {
   type: 'text' | 'image' | 'video' | 'audio';
   mediaUri?: string;
   duration?: string;
+  reactions?: {emoji: string; users: string[]}[];
 }
 
 interface ChatScreenProps {
@@ -67,6 +68,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   const [audioDuration, setAudioDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [seekPosition, setSeekPosition] = useState(0);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [contextMenuPosition, setContextMenuPosition] = useState({x: 0, y: 0});
+  const [messageLayout, setMessageLayout] = useState<{y: number; height: number} | null>(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Sound | null>(null);
@@ -521,6 +527,149 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     setIsSeeking(false);
   };
 
+  const handleMessageLongPress = (message: Message, event: any) => {
+    setSelectedMessage(message);
+    
+    // Get the touch position
+    const {pageX, pageY} = event.nativeEvent;
+    
+    // Calculate menu position based on message location
+    setContextMenuPosition({x: pageX, y: pageY});
+    setContextMenuVisible(true);
+  };
+
+  const handleMenuButtonPress = (message: Message, event: any) => {
+    setSelectedMessage(message);
+    
+    // Get the button position
+    const {pageX, pageY} = event.nativeEvent;
+    
+    // Calculate menu position
+    setContextMenuPosition({x: pageX, y: pageY});
+    setContextMenuVisible(true);
+  };
+
+  const handleReaction = (emoji: string) => {
+    if (selectedMessage) {
+      console.log(`Reacted to message ${selectedMessage.id} with ${emoji}`);
+      
+      // Update the message with the reaction
+      setMessages(prev => prev.map(msg => {
+        if (msg.id === selectedMessage.id) {
+          const reactions = msg.reactions || [];
+          const existingReaction = reactions.find(r => r.emoji === emoji);
+          
+          if (existingReaction) {
+            // Toggle reaction if already exists
+            if (existingReaction.users.includes('me')) {
+              // Remove reaction
+              return {
+                ...msg,
+                reactions: reactions
+                  .map(r => r.emoji === emoji 
+                    ? {...r, users: r.users.filter(u => u !== 'me')} 
+                    : r)
+                  .filter(r => r.users.length > 0)
+              };
+            } else {
+              // Add user to reaction
+              return {
+                ...msg,
+                reactions: reactions.map(r => 
+                  r.emoji === emoji 
+                    ? {...r, users: [...r.users, 'me']} 
+                    : r
+                )
+              };
+            }
+          } else {
+            // Add new reaction
+            return {
+              ...msg,
+              reactions: [...reactions, {emoji, users: ['me']}]
+            };
+          }
+        }
+        return msg;
+      }));
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
+  const handleOpenReactionPicker = () => {
+    setContextMenuVisible(false);
+    setShowReactionPicker(true);
+  };
+
+  const handleReactionFromPicker = (emoji: EmojiType) => {
+    handleReaction(emoji.emoji);
+    setShowReactionPicker(false);
+  };
+
+  const handleReply = () => {
+    if (selectedMessage) {
+      console.log('Replying to message:', selectedMessage.text);
+      // In a real app, you would set a reply state and show it in the input area
+      Alert.alert('Reply', `Replying to: "${selectedMessage.text || 'media'}"`);
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
+  const handleCopyMessage = () => {
+    if (selectedMessage && selectedMessage.type === 'text') {
+      console.log('Copying message:', selectedMessage.text);
+      // In a real app, you would use Clipboard API
+      Alert.alert('Copied', 'Message copied to clipboard');
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
+  const handleEditMessage = () => {
+    if (selectedMessage && selectedMessage.isMine && selectedMessage.type === 'text') {
+      console.log('Editing message:', selectedMessage.text);
+      setInputText(selectedMessage.text);
+      // In a real app, you would track which message is being edited
+      Alert.alert('Edit Mode', 'You can now edit this message');
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
+  const handleDeleteMessage = () => {
+    if (selectedMessage && selectedMessage.isMine) {
+      Alert.alert(
+        'Delete Message',
+        'Are you sure you want to delete this message?',
+        [
+          {text: 'Cancel', style: 'cancel'},
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              setMessages(prev => prev.filter(msg => msg.id !== selectedMessage.id));
+              console.log('Deleted message:', selectedMessage.id);
+            },
+          },
+        ]
+      );
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
+  const handleDownloadMedia = () => {
+    if (selectedMessage && (selectedMessage.type === 'image' || selectedMessage.type === 'video' || selectedMessage.type === 'audio')) {
+      console.log('Downloading media:', selectedMessage.mediaUri);
+      // In a real app, you would download the media to the device
+      Alert.alert('Download', 'Media will be saved to your gallery');
+    }
+    setContextMenuVisible(false);
+    setSelectedMessage(null);
+  };
+
   const compressImage = async (uri: string): Promise<string> => {
     try {
       // For now, just return the original URI since we removed the image manipulator
@@ -604,123 +753,273 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     const isMyMessage = item.isMine;
 
     return (
-      <View
-        style={[
-          styles.messageContainer,
-          isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
-        ]}>
-        {!isMyMessage && (
-          <Avatar.Text
-            size={32}
-            label={name.substring(0, 2).toUpperCase()}
-            style={[styles.messageAvatar, {backgroundColor: avatarColor}]}
-            labelStyle={{fontSize: 12, fontWeight: '700'}}
-          />
-        )}
-        <View style={styles.messageContent}>
-          {item.type === 'text' ? (
-            <View
-              style={[
-                styles.messageBubble,
-                isMyMessage
-                  ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
-                  : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
-              ]}>
-              <Text
-                style={[
-                  styles.messageText,
-                  {color: isMyMessage ? '#FFFFFF' : theme.text},
-                ]}>
-                {item.text}
-              </Text>
-            </View>
-          ) : item.type === 'image' ? (
-            <TouchableOpacity
-              style={styles.mediaContainer}
-              onPress={() => navigation?.navigate('MediaViewer', {
-                mediaUri: item.mediaUri,
-                mediaType: 'image',
-              })}>
-              <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
-            </TouchableOpacity>
-          ) : item.type === 'video' ? (
-            <TouchableOpacity
-              style={styles.mediaContainer}
-              onPress={() => navigation?.navigate('MediaViewer', {
-                mediaUri: item.mediaUri,
-                mediaType: 'video',
-              })}>
-              <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
-              <View style={styles.playButton}>
-                <MaterialIcons name="play-arrow" size={40} color="#FFFFFF" />
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <PanGestureHandler
-              onGestureEvent={(event) => handleAudioSeek(item.id, event.nativeEvent)}
-              onHandlerStateChange={(event) => {
-                if (event.nativeEvent.state === State.END) {
-                  handleSeekEnd();
-                }
-              }}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onLongPress={(event) => handleMessageLongPress(item, event)}
+        delayLongPress={400}>
+        <View
+          style={[
+            styles.messageContainer,
+            isMyMessage ? styles.myMessageContainer : styles.theirMessageContainer,
+          ]}>
+          {!isMyMessage && (
+            <Avatar.Text
+              size={32}
+              label={name.substring(0, 2).toUpperCase()}
+              style={[styles.messageAvatar, {backgroundColor: avatarColor}]}
+              labelStyle={{fontSize: 12, fontWeight: '700'}}
+            />
+          )}
+          <View style={styles.messageContentWrapper}>
+            <View style={styles.messageContent}>
+            {item.type === 'text' ? (
               <View
                 style={[
-                  styles.audioBubble,
+                  styles.messageBubble,
                   isMyMessage
                     ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
                     : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
                 ]}>
-                <TouchableOpacity
-                  style={styles.audioContent}
-                  onPress={() => handlePlayAudio(item.id, item.mediaUri!)}
-                  activeOpacity={0.7}>
-                  <MaterialCommunityIcons 
-                    name={playingAudioId === item.id ? "pause-circle" : "play-circle"} 
-                    size={30} 
-                    color={isMyMessage ? '#FFFFFF' : theme.primary} 
-                  />
-                  <View style={styles.audioInfo}>
-                    <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]}>
-                      {playingAudioId === item.id && audioDuration > 0 && (
-                        <View 
-                          style={[
-                            styles.audioProgress, 
-                            {
-                              width: `${((isSeeking ? seekPosition : audioProgress) / audioDuration) * 100}%`,
-                              backgroundColor: isSeeking ? (isMyMessage ? 'rgba(255,255,255,0.9)' : theme.primary) : 'rgba(255,255,255,0.8)'
-                            }
-                          ]} 
-                        />
-                      )}
-                      {isSeeking && playingAudioId === item.id && (
-                        <View style={[styles.seekIndicator, {backgroundColor: isMyMessage ? '#FFFFFF' : theme.primary}]} />
-                      )}
-                    </View>
-                    <Text style={{color: isMyMessage ? '#FFFFFF' : theme.text, marginLeft: 8}}>
-                      {playingAudioId === item.id ? 
-                        (isSeeking ? 
-                          `${Math.floor(seekPosition)}:${Math.floor((seekPosition % 1) * 60).toString().padStart(2, '0')}` :
-                          `${Math.floor(audioProgress)}:${Math.floor((audioProgress % 1) * 60).toString().padStart(2, '0')}`
-                        ) : 
-                        (item.duration || '0:30')
-                      }
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.messageText,
+                    {color: isMyMessage ? '#FFFFFF' : theme.text},
+                  ]}>
+                  {item.text}
+                </Text>
               </View>
-            </PanGestureHandler>
-          )}
-          <Text
-            style={[
-              styles.messageTime,
-              {color: theme.textSecondary},
-              isMyMessage && styles.myMessageTime,
-            ]}>
-            {formatTime(item.timestamp)}
-          </Text>
+            ) : item.type === 'image' ? (
+              <TouchableOpacity
+                style={styles.mediaContainer}
+                onPress={() => navigation?.navigate('MediaViewer', {
+                  mediaUri: item.mediaUri,
+                  mediaType: 'image',
+                })}>
+                <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
+              </TouchableOpacity>
+            ) : item.type === 'video' ? (
+              <TouchableOpacity
+                style={styles.mediaContainer}
+                onPress={() => navigation?.navigate('MediaViewer', {
+                  mediaUri: item.mediaUri,
+                  mediaType: 'video',
+                })}>
+                <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
+                <View style={styles.playButton}>
+                  <MaterialIcons name="play-arrow" size={40} color="#FFFFFF" />
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <PanGestureHandler
+                onGestureEvent={(event) => handleAudioSeek(item.id, event.nativeEvent)}
+                onHandlerStateChange={(event) => {
+                  if (event.nativeEvent.state === State.END) {
+                    handleSeekEnd();
+                  }
+                }}>
+                <View
+                  style={[
+                    styles.audioBubble,
+                    isMyMessage
+                      ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
+                      : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
+                  ]}>
+                  <TouchableOpacity
+                    style={styles.audioContent}
+                    onPress={() => handlePlayAudio(item.id, item.mediaUri!)}
+                    activeOpacity={0.7}>
+                    <MaterialCommunityIcons 
+                      name={playingAudioId === item.id ? "pause-circle" : "play-circle"} 
+                      size={30} 
+                      color={isMyMessage ? '#FFFFFF' : theme.primary} 
+                    />
+                    <View style={styles.audioInfo}>
+                      <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]}>
+                        {playingAudioId === item.id && audioDuration > 0 && (
+                          <View 
+                            style={[
+                              styles.audioProgress, 
+                              {
+                                width: `${((isSeeking ? seekPosition : audioProgress) / audioDuration) * 100}%`,
+                                backgroundColor: isSeeking ? (isMyMessage ? 'rgba(255,255,255,0.9)' : theme.primary) : 'rgba(255,255,255,0.8)'
+                              }
+                            ]} 
+                          />
+                        )}
+                        {isSeeking && playingAudioId === item.id && (
+                          <View style={[styles.seekIndicator, {backgroundColor: isMyMessage ? '#FFFFFF' : theme.primary}]} />
+                        )}
+                      </View>
+                      <Text style={{color: isMyMessage ? '#FFFFFF' : theme.text, marginLeft: 8}}>
+                        {playingAudioId === item.id ? 
+                          (isSeeking ? 
+                            `${Math.floor(seekPosition)}:${Math.floor((seekPosition % 1) * 60).toString().padStart(2, '0')}` :
+                            `${Math.floor(audioProgress)}:${Math.floor((audioProgress % 1) * 60).toString().padStart(2, '0')}`
+                          ) : 
+                          (item.duration || '0:30')
+                        }
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </PanGestureHandler>
+            )}
+            <Text
+              style={[
+                styles.messageTime,
+                {color: theme.textSecondary},
+                isMyMessage && styles.myMessageTime,
+              ]}>
+              {formatTime(item.timestamp)}
+            </Text>
+            
+            {/* Reactions Display */}
+            {item.reactions && item.reactions.length > 0 && (
+              <View style={[
+                styles.reactionsContainer,
+                isMyMessage ? styles.reactionsRight : styles.reactionsLeft
+              ]}>
+                {item.reactions.map((reaction, index) => (
+                  <TouchableOpacity
+                    key={`${reaction.emoji}-${index}`}
+                    style={[
+                      styles.reactionPill,
+                      {
+                        backgroundColor: reaction.users.includes('me') 
+                          ? theme.primary + '20' 
+                          : theme.surface,
+                        borderColor: reaction.users.includes('me')
+                          ? theme.primary
+                          : theme.textSecondary + '30',
+                      }
+                    ]}
+                    onPress={() => {
+                      setSelectedMessage(item);
+                      handleReaction(reaction.emoji);
+                    }}>
+                    <Text style={styles.reactionPillEmoji}>{reaction.emoji}</Text>
+                    {reaction.users.length > 1 && (
+                      <Text style={[styles.reactionPillCount, {color: theme.text}]}>
+                        {reaction.users.length}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+          
+          {/* 3-dot Menu Button */}
+          <TouchableOpacity
+            style={styles.messageMenuButton}
+            onPress={(event) => handleMenuButtonPress(item, event)}
+            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+            <MaterialIcons 
+              name="more-vert" 
+              size={16} 
+              color={theme.textSecondary} 
+            />
+          </TouchableOpacity>
+          </View>
+          {isMyMessage && <View style={styles.messageAvatarPlaceholder} />}
         </View>
-        {isMyMessage && <View style={styles.messageAvatarPlaceholder} />}
-      </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderContextMenu = () => {
+    if (!contextMenuVisible || !selectedMessage) return null;
+
+    const isMyMessage = selectedMessage.isMine;
+    const isTextMessage = selectedMessage.type === 'text';
+    const isMediaMessage = selectedMessage.type === 'image' || selectedMessage.type === 'video' || selectedMessage.type === 'audio';
+
+    // Calculate position to avoid overflow
+    const {height: screenHeight} = Dimensions.get('window');
+    const menuHeight = 280; // Approximate menu height
+    const shouldShowAbove = contextMenuPosition.y + menuHeight > screenHeight - 100;
+
+    return (
+      <TouchableOpacity
+        style={styles.contextMenuOverlay}
+        activeOpacity={1}
+        onPress={() => {
+          setContextMenuVisible(false);
+          setSelectedMessage(null);
+        }}>
+        <View
+          style={[
+            styles.contextMenuContainer,
+            {
+              backgroundColor: theme.surface,
+              top: shouldShowAbove ? contextMenuPosition.y - menuHeight - 20 : contextMenuPosition.y + 20,
+              left: isMyMessage ? width - 220 : 20,
+            },
+          ]}>
+          {/* Quick Reactions */}
+          <View style={styles.quickReactions}>
+            {['❤️', '👍', '😂', '😮', '😢'].map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.reactionButton}
+                onPress={() => handleReaction(emoji)}>
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.reactionButton, {backgroundColor: theme.primary + '15'}]}
+              onPress={handleOpenReactionPicker}>
+              <MaterialIcons name="add" size={20} color={theme.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.contextMenuDivider, {backgroundColor: theme.textSecondary + '20'}]} />
+
+          {/* Action Items */}
+          <TouchableOpacity
+            style={styles.contextMenuItem}
+            onPress={handleReply}>
+            <MaterialIcons name="reply" size={22} color={theme.primary} />
+            <Text style={[styles.contextMenuText, {color: theme.text}]}>Reply</Text>
+          </TouchableOpacity>
+
+          {isTextMessage && (
+            <TouchableOpacity
+              style={styles.contextMenuItem}
+              onPress={handleCopyMessage}>
+              <MaterialIcons name="content-copy" size={22} color={theme.primary} />
+              <Text style={[styles.contextMenuText, {color: theme.text}]}>Copy</Text>
+            </TouchableOpacity>
+          )}
+
+          {isMyMessage && isTextMessage && (
+            <TouchableOpacity
+              style={styles.contextMenuItem}
+              onPress={handleEditMessage}>
+              <MaterialIcons name="edit" size={22} color={theme.primary} />
+              <Text style={[styles.contextMenuText, {color: theme.text}]}>Edit</Text>
+            </TouchableOpacity>
+          )}
+
+          {isMediaMessage && (
+            <TouchableOpacity
+              style={styles.contextMenuItem}
+              onPress={handleDownloadMedia}>
+              <MaterialIcons name="download" size={22} color={theme.primary} />
+              <Text style={[styles.contextMenuText, {color: theme.text}]}>Download</Text>
+            </TouchableOpacity>
+          )}
+
+          {isMyMessage && (
+            <TouchableOpacity
+              style={styles.contextMenuItem}
+              onPress={handleDeleteMessage}>
+              <MaterialIcons name="delete" size={22} color={theme.error} />
+              <Text style={[styles.contextMenuText, {color: theme.error}]}>Delete</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
     );
   };
 
@@ -960,6 +1259,35 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
           },
         }}
       />
+      
+      {/* Reaction Emoji Picker */}
+      <EmojiPicker
+        onEmojiSelected={handleReactionFromPicker}
+        open={showReactionPicker}
+        onClose={() => {
+          setShowReactionPicker(false);
+          setSelectedMessage(null);
+        }}
+        enableSearchBar
+        enableRecentlyUsed
+        categoryPosition="top"
+        theme={{
+          backdrop: theme.background,
+          knob: theme.textSecondary,
+          container: theme.surface,
+          header: theme.text,
+          skinTonesContainer: theme.surface,
+          category: {
+            icon: theme.textSecondary,
+            iconActive: theme.primary,
+            container: theme.surface,
+            containerActive: theme.primary + '20',
+          },
+        }}
+      />
+      
+      {/* Context Menu */}
+      {renderContextMenu()}
     </SafeAreaView>
   );
 };
@@ -1221,6 +1549,104 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 11,
     flex: 1,
+  },
+
+  // Context Menu Styles
+  contextMenuOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+  },
+  contextMenuContainer: {
+    position: 'absolute',
+    width: 200,
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    zIndex: 1001,
+  },
+  quickReactions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  reactionButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  reactionEmoji: {
+    fontSize: 18,
+  },
+  contextMenuDivider: {
+    height: 1,
+    marginVertical: 4,
+  },
+  contextMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  contextMenuText: {
+    fontSize: 15,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  
+  // Message wrapper with menu button
+  messageContentWrapper: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    maxWidth: width * 0.75,
+  },
+  messageMenuButton: {
+    padding: 4,
+    marginLeft: 4,
+    marginTop: 4,
+    opacity: 0.6,
+  },
+  
+  // Reactions Display
+  reactionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+    gap: 4,
+  },
+  reactionsLeft: {
+    justifyContent: 'flex-start',
+  },
+  reactionsRight: {
+    justifyContent: 'flex-end',
+  },
+  reactionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 3,
+  },
+  reactionPillEmoji: {
+    fontSize: 14,
+  },
+  reactionPillCount: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 
