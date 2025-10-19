@@ -771,7 +771,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
             />
           )}
           <View style={styles.messageContentWrapper}>
-            <View style={styles.messageContent}>
+            <View style={[styles.messageContent, styles.messageFlexContent]}>
             {item.type === 'text' ? (
               <View
                 style={[
@@ -1380,6 +1380,10 @@ const styles = StyleSheet.create({
   messageContent: {
     maxWidth: width * 0.7,
   },
+  messageFlexContent: {
+    flexShrink: 1,
+    flex: 0,
+  },
   messageBubble: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -1610,7 +1614,6 @@ const styles = StyleSheet.create({
   messageContentWrapper: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    maxWidth: width * 0.75,
   },
   messageMenuButton: {
     padding: 4,

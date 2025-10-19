@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {StyleSheet, View, Image} from 'react-native';
 import {Button, Text} from 'react-native-paper';
 import {useTheme} from '../contexts/ThemeContext';
 
@@ -20,7 +20,11 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({onPress, title})
       labelStyle={styles.buttonText}
       icon={() => (
         <View style={styles.iconContainer}>
-          <Text style={styles.googleIcon}>G</Text>
+          <Image
+            source={{uri: 'https://developers.google.com/identity/images/g-logo.png'}}
+            style={styles.googleLogoImage}
+            resizeMode="contain"
+          />
         </View>
       )}
     >
@@ -51,10 +55,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 8,
   },
-  googleIcon: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4285F4',
+  googleLogoImage: {
+    width: 18,
+    height: 18,
   },
   buttonText: {
     fontSize: 16,

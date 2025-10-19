@@ -12,7 +12,7 @@ const Logo: React.FC = () => {
       <View style={styles.logoWrapper}>
         <Avatar.Icon
           size={90}
-          icon="chat-bubble"
+          icon="chat"
           style={[styles.avatar, {backgroundColor: theme.primary}]}
           color="#FFFFFF"
         />
