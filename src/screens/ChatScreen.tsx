@@ -16,7 +16,7 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Text, TextInput, IconButton, Avatar, ActivityIndicator, Menu, Button} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import EmojiSelector from 'react-native-emoji-selector';
+import EmojiPicker, {EmojiType} from 'rn-emoji-keyboard';
 import {launchCamera, launchImageLibrary, MediaType} from 'react-native-image-picker';
 import {useTheme} from '../contexts/ThemeContext';
 import {usePermissions} from '../hooks/usePermissions';
@@ -180,8 +180,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     }
   };
   
-  const handleEmojiSelected = (emoji: string) => {
-    setInputText(prev => prev + emoji);
+  const handleEmojiSelected = (emoji: EmojiType) => {
+    setInputText(prev => prev + emoji.emoji);
     setEmojiPickerVisible(false);
   };
   
@@ -545,11 +545,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                 icon={() => <MaterialIcons name="sentiment-satisfied" size={24} color={theme.textSecondary} />}
                 size={24}
                 style={styles.emojiButton}
-                onPress={() => {
-                  // Close keyboard when opening emoji picker
-                  Keyboard.dismiss();
-                  setEmojiPickerVisible(!emojiPickerVisible);
-                }}
+                onPress={() => setEmojiPickerVisible(!emojiPickerVisible)}
               />
               <TextInput
                 mode="outlined"
@@ -563,6 +559,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                 placeholderTextColor={theme.textSecondary}
                 multiline
                 maxLength={1000}
+                onFocus={() => setEmojiPickerVisible(false)}
               />
             </View>
 
@@ -603,17 +600,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
           </View>
         </View>
         
-        {emojiPickerVisible && (
-          <View style={[styles.emojiPickerContainer, {backgroundColor: theme.surface}]}>
-            <EmojiSelector
-              showSearchBar={false}
-              columns={8}
-              onEmojiSelected={handleEmojiSelected}
-              showTabs={true}
-              showHistory={false}
-            />
-          </View>
-        )}
+        <EmojiPicker
+          onEmojiSelected={handleEmojiSelected}
+          open={emojiPickerVisible}
+          onClose={() => setEmojiPickerVisible(false)}
+          enableSearchBar
+          enableRecentlyUsed
+          categoryPosition="top"
+          theme={{
+            backdrop: theme.background,
+            knob: theme.textSecondary,
+            container: theme.surface,
+            header: theme.text,
+            skinTonesContainer: theme.surface,
+            category: {
+              icon: theme.textSecondary,
+              iconActive: theme.primary,
+              container: theme.surface,
+              containerActive: theme.primary + '20',
+            },
+          }}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -761,13 +768,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     maxHeight: 100,
     fontSize: 15,
-  },
-  emojiPickerContainer: {
-    height: 250,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-    zIndex: 10,
-    paddingBottom: 20,
   },
   audioBubble: {
     paddingHorizontal: 12,
