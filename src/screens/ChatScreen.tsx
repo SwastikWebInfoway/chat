@@ -269,47 +269,21 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   };
 
   const handleImagePicker = async () => {
-    try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 0.8,
-        selectionLimit: 1,
-        includeBase64: false,
-      });
-
-      if (result.assets && result.assets[0] && result.assets[0].uri) {
-        setIsUploading(true);
-        await sendMediaMessage(result.assets[0].uri, 'image');
-      }
-    } catch (error) {
-      console.log('Image picker error:', error);
-      Alert.alert('Error', 'Failed to pick image. Please check permissions.');
-      setIsUploading(false);
-    }
+    // Navigate to gallery picker
+    navigation?.navigate('GalleryPicker', {
+      onMediaSelected: async (uri: string, type: 'image' | 'video') => {
+        await sendMediaMessage(uri, type);
+      },
+    });
   };
 
   const handleVideoPicker = async () => {
-    try {
-      const result = await launchImageLibrary({
-        mediaType: 'video',
-        selectionLimit: 1,
-        includeBase64: false,
-      });
-
-      if (result.assets && result.assets[0] && result.assets[0].uri) {
-        const duration = result.assets[0].duration || 0;
-        if (duration > 30) {
-          Alert.alert('Video too long', 'Please select a video shorter than 30 seconds');
-          return;
-        }
-        setIsUploading(true);
-        await sendMediaMessage(result.assets[0].uri, 'video');
-      }
-    } catch (error) {
-      console.log('Video picker error:', error);
-      Alert.alert('Error', 'Failed to pick video. Please check permissions.');
-      setIsUploading(false);
-    }
+    // This is now handled by the gallery picker with video filter
+    navigation?.navigate('GalleryPicker', {
+      onMediaSelected: async (uri: string, type: 'image' | 'video') => {
+        await sendMediaMessage(uri, type);
+      },
+    });
   };
 
   const handleCamera = async () => {
@@ -318,49 +292,12 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
       if (!granted) return;
     }
 
-    try {
-      const result = await launchCamera({
-        mediaType: 'photo',
-        quality: 0.8,
-        saveToPhotos: true,
-        includeBase64: false,
-      });
-
-      if (result.assets && result.assets[0] && result.assets[0].uri) {
-        setIsUploading(true);
-        await sendMediaMessage(result.assets[0].uri, 'image');
-      }
-    } catch (error) {
-      console.log('Camera error:', error);
-      Alert.alert('Camera Error', 'Could not open camera. Please try again.');
-      setIsUploading(false);
-    }
-  };
-
-  const handleVideoRecord = async () => {
-    if (!permissions.camera) {
-      const granted = await requestCameraPermission();
-      if (!granted) return;
-    }
-
-    try {
-      const result = await launchCamera({
-        mediaType: 'video',
-        quality: 0.8,
-        durationLimit: 30,
-        saveToPhotos: true,
-        includeBase64: false,
-      });
-
-      if (result.assets && result.assets[0] && result.assets[0].uri) {
-        setIsUploading(true);
-        await sendMediaMessage(result.assets[0].uri, 'video');
-      }
-    } catch (error) {
-      console.log('Video recording error:', error);
-      Alert.alert('Video Error', 'Could not record video. Please try again.');
-      setIsUploading(false);
-    }
+    // Navigate to custom camera screen
+    navigation?.navigate('Camera', {
+      onMediaCaptured: async (uri: string, type: 'image' | 'video') => {
+        await sendMediaMessage(uri, type);
+      },
+    });
   };
 
   const renderMessage = ({item}: {item: Message}) => {
@@ -400,13 +337,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
           ) : item.type === 'image' ? (
             <TouchableOpacity
               style={styles.mediaContainer}
-              onPress={() => Alert.alert('Image', 'Full screen image viewer')}>
+              onPress={() => navigation?.navigate('MediaViewer', {
+                mediaUri: item.mediaUri,
+                mediaType: 'image',
+              })}>
               <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
             </TouchableOpacity>
           ) : item.type === 'video' ? (
             <TouchableOpacity
               style={styles.mediaContainer}
-              onPress={() => Alert.alert('Video', 'Video player')}>
+              onPress={() => navigation?.navigate('MediaViewer', {
+                mediaUri: item.mediaUri,
+                mediaType: 'video',
+              })}>
               <Image source={{uri: item.mediaUri}} style={styles.mediaImage} />
               <View style={styles.playButton}>
                 <MaterialIcons name="play-arrow" size={40} color="#FFFFFF" />
@@ -420,7 +363,10 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                   ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
                   : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
               ]}
-              onPress={() => Alert.alert('Audio', 'Audio player')}>
+              onPress={() => navigation?.navigate('AudioPlayer', {
+                audioUri: item.mediaUri,
+                duration: item.duration,
+              })}>
               <View style={styles.audioContent}>
                 <MaterialCommunityIcons 
                   name="play-circle" 
@@ -581,9 +527,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                   backgroundColor: permissions.camera ? theme.primary + '15' : theme.textSecondary + '15'
                 }
               ]}
-              onPress={handleCamera}
-              onLongPress={handleVideoRecord}
-              delayLongPress={500}>
+              onPress={handleCamera}>
               <MaterialIcons 
                 name="camera-alt" 
                 size={24} 

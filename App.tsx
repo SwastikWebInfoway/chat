@@ -14,6 +14,11 @@ import ChatListScreen from './src/screens/ChatListScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import FindFriendsScreen from './src/screens/FindFriendsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import CameraScreen from './src/screens/CameraScreen';
+import MediaPreviewScreen from './src/screens/MediaPreviewScreen';
+import MediaViewerScreen from './src/screens/MediaViewerScreen';
+import AudioPlayerScreen from './src/screens/AudioPlayerScreen';
+import GalleryPickerScreen from './src/screens/GalleryPickerScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -43,6 +48,11 @@ function ChatStack() {
     <Stack.Navigator screenOptions={{headerShown: false}}>
       <Stack.Screen name="ChatList" component={ChatListScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="Camera" component={CameraScreen} />
+      <Stack.Screen name="MediaPreview" component={MediaPreviewScreen} />
+      <Stack.Screen name="MediaViewer" component={MediaViewerScreen} />
+      <Stack.Screen name="AudioPlayer" component={AudioPlayerScreen} />
+      <Stack.Screen name="GalleryPicker" component={GalleryPickerScreen} />
     </Stack.Navigator>
   );
 }

@@ -147,6 +147,31 @@
         }
       }
     },
+    "react-native-sound": {
+      "root": "/home/krupal/Prompts/chat/node_modules/react-native-sound",
+      "name": "react-native-sound",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/home/krupal/Prompts/chat/node_modules/react-native-sound/RNSound.podspec",
+          "version": "0.13.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/home/krupal/Prompts/chat/node_modules/react-native-sound/android",
+          "packageImportPath": "import com.zmxv.RNSound.SoundPackage;",
+          "packageInstance": "new SoundPackage()",
+          "buildTypes": [],
+          "libraryName": "RNSoundSpec",
+          "componentDescriptors": [],
+          "cmakeListsPath": "/home/krupal/Prompts/chat/node_modules/react-native-sound/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-vector-icons": {
       "root": "/home/krupal/Prompts/chat/node_modules/react-native-vector-icons",
       "name": "react-native-vector-icons",
@@ -165,6 +190,54 @@
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
           "cmakeListsPath": "/home/krupal/Prompts/chat/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-video": {
+      "root": "/home/krupal/Prompts/chat/node_modules/react-native-video",
+      "name": "react-native-video",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/home/krupal/Prompts/chat/node_modules/react-native-video/react-native-video.podspec",
+          "version": "6.17.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/home/krupal/Prompts/chat/node_modules/react-native-video/android",
+          "packageImportPath": "import com.brentvatne.react.ReactVideoPackage;",
+          "packageInstance": "new ReactVideoPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "/home/krupal/Prompts/chat/node_modules/react-native-video/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-vision-camera": {
+      "root": "/home/krupal/Prompts/chat/node_modules/react-native-vision-camera",
+      "name": "react-native-vision-camera",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/home/krupal/Prompts/chat/node_modules/react-native-vision-camera/VisionCamera.podspec",
+          "version": "4.7.2",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/home/krupal/Prompts/chat/node_modules/react-native-vision-camera/android",
+          "packageImportPath": "import com.mrousavy.camera.react.CameraPackage;",
+          "packageInstance": "new CameraPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "/home/krupal/Prompts/chat/node_modules/react-native-vision-camera/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
