@@ -545,25 +545,25 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                 color={permissions.camera ? theme.primary : theme.textSecondary} 
               />
             </TouchableOpacity>
-            <IconButton
-              icon={() => <MaterialIcons name="image" size={24} color={theme.primary} />}
-              size={24}
-              onPress={handleImagePicker}
-            />
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleImagePicker}>
+              <MaterialIcons name="image" size={24} color={theme.primary} />
+            </TouchableOpacity>
 
             <View style={styles.inputTextContainer}>
-              <IconButton
-                icon={() => <MaterialIcons name="sentiment-satisfied" size={24} color={theme.textSecondary} />}
-                size={24}
+              <TouchableOpacity
                 style={styles.emojiButton}
-                onPress={() => setEmojiPickerVisible(!emojiPickerVisible)}
-              />
+                onPress={() => setEmojiPickerVisible(!emojiPickerVisible)}>
+                <MaterialIcons name="sentiment-satisfied" size={24} color={theme.textSecondary} />
+              </TouchableOpacity>
               <TextInput
                 mode="outlined"
                 placeholder="Type a message..."
                 value={inputText}
                 onChangeText={setInputText}
                 style={[styles.textInput, {backgroundColor: theme.background}]}
+                contentStyle={styles.textInputContent}
                 outlineColor="transparent"
                 activeOutlineColor={theme.primary}
                 textColor={theme.text}
@@ -575,11 +575,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
             </View>
 
             {inputText.trim() ? (
-              <IconButton
-                icon={() => <MaterialIcons name="send" size={24} color={theme.primary} />}
-                size={24}
-                onPress={handleSend}
-              />
+              <TouchableOpacity
+                style={styles.sendButton}
+                onPress={handleSend}>
+                <MaterialIcons name="send" size={24} color={theme.primary} />
+              </TouchableOpacity>
             ) : (
               <View style={styles.audioButtonContainer}>
                 {isRecording && (
@@ -659,8 +659,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   emojiButton: {
-    margin: 0,
-    marginLeft: -6,
+    width: 40,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 0,
+    marginRight: 4,
+  },
+  iconButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 4,
+  },
+  sendButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backButton: {
     padding: 8,
@@ -779,6 +796,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     maxHeight: 100,
     fontSize: 15,
+    minHeight: 48,
+    height: 48,
+    paddingTop: 0,
+  },
+  textInputContent: {
+    paddingTop: 12,
+    paddingBottom: 12,
   },
   audioBubble: {
     paddingHorizontal: 12,
@@ -804,7 +828,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   cameraButton: {
-    padding: 12,
+    width: 48,
+    height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
@@ -831,7 +856,8 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   microphoneButton: {
-    padding: 12,
+    width: 48,
+    height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
