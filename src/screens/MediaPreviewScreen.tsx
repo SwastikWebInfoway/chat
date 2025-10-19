@@ -12,6 +12,7 @@ import {
 import {Text, TextInput} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '../contexts/ThemeContext';
 
 const {width, height} = Dimensions.get('window');
@@ -29,6 +30,7 @@ interface MediaPreviewScreenProps {
 
 const MediaPreviewScreen: React.FC<MediaPreviewScreenProps> = ({navigation, route}) => {
   const {theme} = useTheme();
+  const insets = useSafeAreaInsets();
   const {mediaUri = '', mediaType = 'image', onSend} = route?.params || {};
   const [caption, setCaption] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -82,14 +84,14 @@ const MediaPreviewScreen: React.FC<MediaPreviewScreenProps> = ({navigation, rout
       </View>
 
       {/* Top Controls */}
-      <View style={styles.topControls}>
+      <View style={[styles.topControls, {top: insets.top + 10}]}>
         <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.iconButton}>
           <MaterialIcons name="close" size={30} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
       {/* Bottom Controls */}
-      <View style={styles.bottomControls}>
+      <View style={[styles.bottomControls, {bottom: 30 + insets.bottom}]}>
         <TextInput
           mode="flat"
           placeholder="Add a caption..."
@@ -126,7 +128,6 @@ const styles = StyleSheet.create({
   },
   topControls: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 40,
     left: 0,
     right: 0,
     flexDirection: 'row',

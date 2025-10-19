@@ -13,6 +13,7 @@ import {
 import {Text, IconButton, SegmentedButtons} from 'react-native-paper';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {launchImageLibrary} from 'react-native-image-picker';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useTheme} from '../contexts/ThemeContext';
 
 const {width} = Dimensions.get('window');
@@ -29,6 +30,7 @@ interface GalleryPickerScreenProps {
 
 const GalleryPickerScreen: React.FC<GalleryPickerScreenProps> = ({navigation, route}) => {
   const {theme} = useTheme();
+  const insets = useSafeAreaInsets();
   const [mediaType, setMediaType] = useState<'photo' | 'video' | 'mixed'>('mixed');
 
   const handleMediaPicker = async (type: 'photo' | 'video' | 'mixed') => {
@@ -91,7 +93,7 @@ const GalleryPickerScreen: React.FC<GalleryPickerScreenProps> = ({navigation, ro
       <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       
       {/* Header */}
-      <View style={[styles.header, {backgroundColor: theme.surface}]}>
+      <View style={[styles.header, {backgroundColor: theme.surface, paddingTop: insets.top}]}>
         <IconButton
           icon={() => <MaterialIcons name="close" size={24} color={theme.text} />}
           onPress={() => navigation?.goBack()}
