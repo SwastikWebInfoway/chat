@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -35,16 +35,77 @@ const MediaPreviewScreen: React.FC<MediaPreviewScreenProps> = ({navigation, rout
   const [caption, setCaption] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<any>(null);
+  const isMountedRef = useRef(true);
+
+  console.log('📹 MediaPreviewScreen mounted:', {mediaUri, mediaType});
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    console.log('📹 MediaPreviewScreen useEffect - Setting up');
+
+    return () => {
+      console.log('📹 MediaPreviewScreen unmounting - Cleaning up');
+      isMountedRef.current = false;
+      
+      // Cleanup video player
+      if (videoRef.current) {
+        try {
+          console.log('📹 Cleaning up video player');
+          // Video player cleanup is handled by react-native-video automatically
+          videoRef.current = null;
+        } catch (error) {
+          console.warn('⚠️ Error cleaning up video:', error);
+        }
+      }
+    };
+  }, []);
 
   const handleSend = () => {
+    console.log('✉️ Sending media:', {mediaUri, mediaType, caption});
     if (onSend) {
-      onSend(mediaUri, mediaType, caption);
+      try {
+        onSend(mediaUri, mediaType, caption);
+        console.log('✅ Media sent successfully');
+      } catch (error) {
+        console.error('❌ Error sending media:', error);
+      }
     }
-    navigation?.goBack();
+    
+    if (navigation && isMountedRef.current) {
+      navigation.goBack();
+    }
   };
 
   const togglePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    console.log('▶️ Toggle play/pause:', !isPlaying);
+    if (isMountedRef.current) {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleVideoError = (error: any) => {
+    console.error('❌ Video playback error:', error);
+    if (isMountedRef.current) {
+      Alert.alert('Video Error', 'Failed to load or play video. The video file may be corrupted.');
+    }
+  };
+
+  const handleVideoLoad = (data: any) => {
+    console.log('✅ Video loaded successfully:', {
+      duration: data.duration,
+      naturalSize: data.naturalSize,
+      currentTime: data.currentTime,
+    });
+  };
+
+  const handleVideoProgress = (data: any) => {
+    // Log less frequently to avoid spam
+    if (data.currentTime % 5 < 0.5) {
+      console.log('⏱️ Video progress:', {
+        currentTime: data.currentTime.toFixed(2),
+        playableDuration: data.playableDuration.toFixed(2),
+      });
+    }
   };
 
   return (
@@ -64,10 +125,25 @@ const MediaPreviewScreen: React.FC<MediaPreviewScreenProps> = ({navigation, rout
               resizeMode="contain"
               repeat
               paused={!isPlaying}
-              onError={(error: any) => {
-                console.error('Video error:', error);
-                Alert.alert('Error', 'Failed to load video');
+              onError={handleVideoError}
+              onLoad={handleVideoLoad}
+              onProgress={handleVideoProgress}
+              onReadyForDisplay={() => console.log('📹 Video ready for display')}
+              onBuffer={(data: any) => console.log('📹 Video buffering:', data.isBuffering)}
+              posterResizeMode="contain"
+              ignoreSilentSwitch="ignore"
+              playInBackground={false}
+              playWhenInactive={false}
+              mixWithOthers="duck"
+              bufferConfig={{
+                minBufferMs: 2000,
+                maxBufferMs: 5000,
+                bufferForPlaybackMs: 1000,
+                bufferForPlaybackAfterRebufferMs: 1500,
               }}
+              maxBitRate={2000000}
+              disableFocus={true}
+              controls={false}
             />
             <TouchableOpacity 
               style={styles.playPauseButton} 

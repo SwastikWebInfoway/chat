@@ -341,6 +341,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
             // Check if we've hit the max time
             if (newTime >= 60000) {
               // Stop automatically without recursive call
+              console.log('🎤 Recording hit 60s limit, auto-stopping...');
+              
               if (recordingIntervalRef.current) {
                 clearInterval(recordingIntervalRef.current);
                 recordingIntervalRef.current = null;
@@ -353,23 +355,43 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                 
                 AudioRecord.stop()
                   .then(audioFile => {
-                    console.log('Auto-stopped at 60s, file:', audioFile);
+                    console.log('✅ 60s recording saved:', audioFile);
                     if (isMountedRef.current) {
-                      const newMessage: Message = {
-                        id: Date.now().toString(),
-                        text: '',
-                        timestamp: new Date(),
-                        isMine: true,
-                        type: 'audio',
-                        mediaUri: audioFile,
-                        duration: '1:00', // 60 seconds
-                      };
-                      setMessages(prev => [...prev, newMessage]);
-                      scrollToBottom();
+                      // Show alert to user
+                      Alert.alert(
+                        '⏱️ Maximum Duration Reached',
+                        'Your voice message has reached the maximum duration of 60 seconds.',
+                        [
+                          {
+                            text: 'Discard',
+                            style: 'destructive',
+                            onPress: () => {
+                              console.log('❌ User discarded 60s recording');
+                            }
+                          },
+                          {
+                            text: 'Send',
+                            onPress: () => {
+                              console.log('✉️ User sending 60s recording');
+                              const newMessage: Message = {
+                                id: Date.now().toString(),
+                                text: '',
+                                timestamp: new Date(),
+                                isMine: true,
+                                type: 'audio',
+                                mediaUri: audioFile,
+                                duration: '1:00', // 60 seconds
+                              };
+                              setMessages(prev => [...prev, newMessage]);
+                              scrollToBottom();
+                            }
+                          }
+                        ]
+                      );
                     }
                   })
                   .catch(error => {
-                    console.error('Failed to stop recording at max time:', error);
+                    console.error('❌ Failed to stop recording at max time:', error);
                     if (isMountedRef.current) {
                       Alert.alert('Recording Error', 'Failed to save audio recording');
                     }
@@ -552,15 +574,28 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   };
 
   const handleCamera = async () => {
+    console.log('📷 Opening camera...');
     if (!permissions.camera) {
       const granted = await requestCameraPermission();
-      if (!granted) return;
+      if (!granted) {
+        console.log('❌ Camera permission denied');
+        return;
+      }
     }
 
     // Navigate to custom camera screen
     navigation?.navigate('Camera', {
       onMediaCaptured: async (uri: string, type: 'image' | 'video') => {
-        await sendMediaMessage(uri, type);
+        console.log('📸 Media captured:', {uri, type});
+        try {
+          await sendMediaMessage(uri, type);
+          console.log('✅ Media message sent successfully');
+        } catch (error) {
+          console.error('❌ Error sending media message:', error);
+          if (isMountedRef.current) {
+            Alert.alert('Send Error', 'Failed to send media message');
+          }
+        }
       },
     });
   };
