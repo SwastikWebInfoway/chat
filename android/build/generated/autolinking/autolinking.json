@@ -28,6 +28,30 @@
         }
       }
     },
+    "react-native-audio-record": {
+      "root": "/home/krupal/Prompts/chat/node_modules/react-native-audio-record",
+      "name": "react-native-audio-record",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/home/krupal/Prompts/chat/node_modules/react-native-audio-record/RNAudioRecord.podspec",
+          "version": "0.2.2",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/home/krupal/Prompts/chat/node_modules/react-native-audio-record/android",
+          "packageImportPath": "import com.goodatlas.audiorecord.RNAudioRecordPackage;",
+          "packageInstance": "new RNAudioRecordPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "/home/krupal/Prompts/chat/node_modules/react-native-audio-record/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-gesture-handler": {
       "root": "/home/krupal/Prompts/chat/node_modules/react-native-gesture-handler",
       "name": "react-native-gesture-handler",

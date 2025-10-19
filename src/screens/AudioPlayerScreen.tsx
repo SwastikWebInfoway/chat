@@ -37,11 +37,20 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
     // Initialize sound
     Sound.setCategory('Playback');
     
-    // For mock audio, we'll just use a timer
-    // In real app, you would load the actual audio file
-    const durationParts = duration.split(':');
-    const durationSeconds = parseInt(durationParts[0]) * 60 + parseInt(durationParts[1]);
-    setTotalDuration(durationSeconds);
+    if (audioUri) {
+      // Load the actual audio file
+      soundRef.current = new Sound(audioUri, '', (error) => {
+        if (error) {
+          console.error('Failed to load sound:', error);
+          Alert.alert('Playback Error', 'Failed to load audio file');
+          return;
+        }
+        
+        // Get duration from the loaded sound
+        const duration = soundRef.current?.getDuration() || 0;
+        setTotalDuration(duration);
+      });
+    }
 
     return () => {
       if (intervalRef.current) {
@@ -51,11 +60,14 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
         soundRef.current.release();
       }
     };
-  }, [duration]);
+  }, [audioUri]);
 
   const togglePlayPause = () => {
+    if (!soundRef.current) return;
+    
     if (isPlaying) {
       // Pause
+      soundRef.current.pause();
       setIsPlaying(false);
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -63,21 +75,30 @@ const AudioPlayerScreen: React.FC<AudioPlayerScreenProps> = ({navigation, route}
       }
     } else {
       // Play
+      soundRef.current.play((success) => {
+        if (success) {
+          setIsPlaying(false);
+          setCurrentTime(0);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+        } else {
+          console.error('Playback failed');
+          Alert.alert('Playback Error', 'Failed to play audio');
+          setIsPlaying(false);
+        }
+      });
+      
       setIsPlaying(true);
       
-      // Simulate playback with a timer
+      // Update progress
       intervalRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          if (prev >= totalDuration) {
-            setIsPlaying(false);
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current);
-              intervalRef.current = null;
-            }
-            return 0;
-          }
-          return prev + 0.1;
-        });
+        if (soundRef.current) {
+          soundRef.current.getCurrentTime((seconds) => {
+            setCurrentTime(seconds);
+          });
+        }
       }, 100);
     }
   };

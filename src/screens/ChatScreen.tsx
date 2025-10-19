@@ -18,6 +18,8 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import EmojiPicker, {EmojiType} from 'rn-emoji-keyboard';
 import {launchCamera, launchImageLibrary, MediaType} from 'react-native-image-picker';
+// @ts-ignore
+import AudioRecord from 'react-native-audio-record';
 import {useTheme} from '../contexts/ThemeContext';
 import {usePermissions} from '../hooks/usePermissions';
 
@@ -82,6 +84,22 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
       }
     };
   }, [navigation]);
+
+  useEffect(() => {
+    // Initialize audio recording
+    try {
+      const options = {
+        sampleRate: 16000,
+        channels: 1,
+        bitsPerSample: 16,
+        wavFile: 'recording.wav'
+      };
+      AudioRecord.init(options);
+      console.log('Audio recording initialized successfully');
+    } catch (error) {
+      console.warn('Audio recording initialization failed:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const mockMessages: Message[] = [
@@ -208,36 +226,48 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
         recordingIntervalRef.current = null;
       }
       
-      // Simulate audio recording completion
-      const mockAudioPath = 'file://path/to/recorded/audio.mp3';
-      
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: '',
-        timestamp: new Date(),
-        isMine: true,
-        type: 'audio',
-        mediaUri: mockAudioPath,
-        duration: `0:${Math.floor(recordingTimer / 1000).toString().padStart(2, '0')}`,
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
-      scrollToBottom();
+      try {
+        const audioFile = await AudioRecord.stop();
+        
+        const newMessage: Message = {
+          id: Date.now().toString(),
+          text: '',
+          timestamp: new Date(),
+          isMine: true,
+          type: 'audio',
+          mediaUri: audioFile,
+          duration: `0:${Math.floor(recordingTimer / 1000).toString().padStart(2, '0')}`,
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        scrollToBottom();
+      } catch (error) {
+        console.error('Failed to stop recording:', error);
+        Alert.alert('Recording Error', 'Failed to save audio recording');
+      }
     } else {
       // Start recording
       setIsRecording(true);
       setRecordingTimer(0);
       
-      // Start timer
-      recordingIntervalRef.current = setInterval(() => {
-        setRecordingTimer(prev => {
-          if (prev >= 60000) { // Max 60 seconds
-            handleRecordAudio(); // Stop recording
-            return prev;
-          }
-          return prev + 1000;
-        });
-      }, 1000);
+      try {
+        await AudioRecord.start();
+        
+        // Start timer
+        recordingIntervalRef.current = setInterval(() => {
+          setRecordingTimer(prev => {
+            if (prev >= 60000) { // Max 60 seconds
+              handleRecordAudio(); // Stop recording
+              return prev;
+            }
+            return prev + 1000;
+          });
+        }, 1000);
+      } catch (error) {
+        console.error('Failed to start recording:', error);
+        setIsRecording(false);
+        Alert.alert('Recording Error', 'Failed to start audio recording');
+      }
     }
   };
 
