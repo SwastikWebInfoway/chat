@@ -57,6 +57,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTimer, setRecordingTimer] = useState(0);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -124,11 +125,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   useEffect(() => {
     // Handle keyboard showing and hiding
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardVisible(true);
       scrollToBottom(false);
+    });
+    
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardVisible(false);
     });
       
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, []);
 
@@ -397,7 +404,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]} edges={['right', 'left', 'bottom']}>
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]} edges={['right', 'left']}>
       <StatusBar 
         barStyle="dark-content" 
         backgroundColor="transparent" 
@@ -483,43 +490,47 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
         </Menu>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.messagesList}
-        showsVerticalScrollIndicator={false}
-        onContentSizeChange={() => scrollToBottom()}
-      />
-
-      {isUploading && (
-        <View style={[styles.uploadingContainer, {backgroundColor: theme.surface}]}>
-          <ActivityIndicator size="small" color={theme.primary} />
-          <Text style={[styles.uploadingText, {color: theme.text}]}>Uploading...</Text>
-        </View>
-      )}
-
-      {(!permissions.camera || !permissions.microphone) && (
-        <View style={[styles.permissionWarningContainer, {backgroundColor: theme.warning + '15'}]}>
-          <MaterialIcons name="info" size={16} color={theme.warning} />
-          <Text style={[styles.permissionWarningText, {color: theme.warning}]}>
-            Some features need permissions. Tap menu → Permissions to enable.
-          </Text>
-        </View>
-      )}
-
       <KeyboardAvoidingView
+        style={{flex: 1}}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-        <View 
-          style={[
-            styles.inputContainer, 
-            {
-              backgroundColor: theme.surface,
-            }
-          ]}>
-          <View style={styles.inputRow}>
+        keyboardVerticalOffset={0}
+        enabled={keyboardVisible || emojiPickerVisible}>
+        
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.messagesList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollToBottom()}
+        />
+
+        {isUploading && (
+          <View style={[styles.uploadingContainer, {backgroundColor: theme.surface}]}>
+            <ActivityIndicator size="small" color={theme.primary} />
+            <Text style={[styles.uploadingText, {color: theme.text}]}>Uploading...</Text>
+          </View>
+        )}
+
+        {(!permissions.camera || !permissions.microphone) && (
+          <View style={[styles.permissionWarningContainer, {backgroundColor: theme.warning + '15'}]}>
+            <MaterialIcons name="info" size={16} color={theme.warning} />
+            <Text style={[styles.permissionWarningText, {color: theme.warning}]}>
+              Some features need permissions. Tap menu → Permissions to enable.
+            </Text>
+          </View>
+        )}
+
+      <View 
+        style={[
+          styles.inputContainer, 
+          {
+            backgroundColor: theme.surface,
+            paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8),
+          }
+        ]}>
+        <View style={styles.inputRow}>
             <TouchableOpacity
               style={[
                 styles.cameraButton, 
@@ -599,29 +610,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
             )}
           </View>
         </View>
-        
-        <EmojiPicker
-          onEmojiSelected={handleEmojiSelected}
-          open={emojiPickerVisible}
-          onClose={() => setEmojiPickerVisible(false)}
-          enableSearchBar
-          enableRecentlyUsed
-          categoryPosition="top"
-          theme={{
-            backdrop: theme.background,
-            knob: theme.textSecondary,
-            container: theme.surface,
-            header: theme.text,
-            skinTonesContainer: theme.surface,
-            category: {
-              icon: theme.textSecondary,
-              iconActive: theme.primary,
-              container: theme.surface,
-              containerActive: theme.primary + '20',
-            },
-          }}
-        />
       </KeyboardAvoidingView>
+      
+      <EmojiPicker
+        onEmojiSelected={handleEmojiSelected}
+        open={emojiPickerVisible}
+        onClose={() => setEmojiPickerVisible(false)}
+        enableSearchBar
+        enableRecentlyUsed
+        categoryPosition="top"
+        theme={{
+          backdrop: theme.background,
+          knob: theme.textSecondary,
+          container: theme.surface,
+          header: theme.text,
+          skinTonesContainer: theme.surface,
+          category: {
+            icon: theme.textSecondary,
+            iconActive: theme.primary,
+            container: theme.surface,
+            containerActive: theme.primary + '20',
+          },
+        }}
+      />
     </SafeAreaView>
   );
 };
