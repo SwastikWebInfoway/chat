@@ -18,6 +18,7 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import EmojiPicker, {EmojiType} from 'rn-emoji-keyboard';
 import {launchCamera, launchImageLibrary, MediaType} from 'react-native-image-picker';
+import {PanGestureHandler, State} from 'react-native-gesture-handler';
 // @ts-ignore
 import AudioRecord from 'react-native-audio-record';
 import Sound from 'react-native-sound';
@@ -64,6 +65,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+  const [seekPosition, setSeekPosition] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Sound | null>(null);
@@ -351,6 +354,26 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     }
   };
 
+  const handleAudioSeek = (messageId: string, gestureState: any) => {
+    if (!soundRef.current || playingAudioId !== messageId || audioDuration === 0) return;
+
+    const { translationX } = gestureState;
+    const audioWidth = width * 0.5; // Same width as audioContent
+    const seekPercentage = Math.max(0, Math.min(1, (translationX / audioWidth) + 0.5)); // Center at 0.5
+    const newPosition = seekPercentage * audioDuration;
+
+    setSeekPosition(newPosition);
+    setIsSeeking(true);
+
+    // Seek to the new position
+    soundRef.current.setCurrentTime(newPosition);
+    setAudioProgress(newPosition);
+  };
+
+  const handleSeekEnd = () => {
+    setIsSeeking(false);
+  };
+
   const compressImage = async (uri: string): Promise<string> => {
     try {
       // For now, just return the original URI since we removed the image manipulator
@@ -473,40 +496,59 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
               </View>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.audioBubble,
-                isMyMessage
-                  ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
-                  : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
-              ]}
-              onPress={() => handlePlayAudio(item.id, item.mediaUri!)}>
-              <View style={styles.audioContent}>
-                <MaterialCommunityIcons 
-                  name={playingAudioId === item.id ? "pause-circle" : "play-circle"} 
-                  size={30} 
-                  color={isMyMessage ? '#FFFFFF' : theme.primary} 
-                />
-                <View style={styles.audioInfo}>
-                  <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]}>
-                    {playingAudioId === item.id && audioDuration > 0 && (
-                      <View 
-                        style={[
-                          styles.audioProgress, 
-                          {width: `${(audioProgress / audioDuration) * 100}%`}
-                        ]} 
-                      />
-                    )}
+            <PanGestureHandler
+              onGestureEvent={(event) => handleAudioSeek(item.id, event.nativeEvent)}
+              onHandlerStateChange={(event) => {
+                if (event.nativeEvent.state === State.END) {
+                  handleSeekEnd();
+                }
+              }}>
+              <View
+                style={[
+                  styles.audioBubble,
+                  isMyMessage
+                    ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
+                    : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
+                ]}>
+                <TouchableOpacity
+                  style={styles.audioContent}
+                  onPress={() => handlePlayAudio(item.id, item.mediaUri!)}
+                  activeOpacity={0.7}>
+                  <MaterialCommunityIcons 
+                    name={playingAudioId === item.id ? "pause-circle" : "play-circle"} 
+                    size={30} 
+                    color={isMyMessage ? '#FFFFFF' : theme.primary} 
+                  />
+                  <View style={styles.audioInfo}>
+                    <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]}>
+                      {playingAudioId === item.id && audioDuration > 0 && (
+                        <View 
+                          style={[
+                            styles.audioProgress, 
+                            {
+                              width: `${((isSeeking ? seekPosition : audioProgress) / audioDuration) * 100}%`,
+                              backgroundColor: isSeeking ? (isMyMessage ? 'rgba(255,255,255,0.9)' : theme.primary) : 'rgba(255,255,255,0.8)'
+                            }
+                          ]} 
+                        />
+                      )}
+                      {isSeeking && playingAudioId === item.id && (
+                        <View style={[styles.seekIndicator, {backgroundColor: isMyMessage ? '#FFFFFF' : theme.primary}]} />
+                      )}
+                    </View>
+                    <Text style={{color: isMyMessage ? '#FFFFFF' : theme.text, marginLeft: 8}}>
+                      {playingAudioId === item.id ? 
+                        (isSeeking ? 
+                          `${Math.floor(seekPosition)}:${Math.floor((seekPosition % 1) * 60).toString().padStart(2, '0')}` :
+                          `${Math.floor(audioProgress)}:${Math.floor((audioProgress % 1) * 60).toString().padStart(2, '0')}`
+                        ) : 
+                        (item.duration || '0:30')
+                      }
+                    </Text>
                   </View>
-                  <Text style={{color: isMyMessage ? '#FFFFFF' : theme.text, marginLeft: 8}}>
-                    {playingAudioId === item.id ? 
-                      `${Math.floor(audioProgress)}:${Math.floor((audioProgress % 1) * 60).toString().padStart(2, '0')}` : 
-                      (item.duration || '0:30')
-                    }
-                  </Text>
-                </View>
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
+            </PanGestureHandler>
           )}
           <Text
             style={[
@@ -950,6 +992,19 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: 10,
+  },
+  seekIndicator: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    width: 12,
+    height: 26,
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
   },
   cameraButton: {
     width: 48,
