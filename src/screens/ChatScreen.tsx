@@ -20,6 +20,7 @@ import EmojiPicker, {EmojiType} from 'rn-emoji-keyboard';
 import {launchCamera, launchImageLibrary, MediaType} from 'react-native-image-picker';
 // @ts-ignore
 import AudioRecord from 'react-native-audio-record';
+import Sound from 'react-native-sound';
 import {useTheme} from '../contexts/ThemeContext';
 import {usePermissions} from '../hooks/usePermissions';
 
@@ -60,8 +61,13 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTimer, setRecordingTimer] = useState(0);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const soundRef = useRef<Sound | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const parent = navigation?.getParent();
@@ -154,6 +160,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    // Cleanup audio resources when component unmounts
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     };
   }, []);
 
@@ -268,6 +287,67 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
         setIsRecording(false);
         Alert.alert('Recording Error', 'Failed to start audio recording');
       }
+    }
+  };
+
+  const handlePlayAudio = async (messageId: string, audioUri: string) => {
+    try {
+      // Stop current playing audio if any
+      if (soundRef.current) {
+        soundRef.current.stop();
+        soundRef.current.release();
+        soundRef.current = null;
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      }
+
+      // If clicking the same audio that's playing, just pause
+      if (playingAudioId === messageId) {
+        setPlayingAudioId(null);
+        setAudioProgress(0);
+        return;
+      }
+
+      // Start new audio
+      const sound = new Sound(audioUri, '', (error) => {
+        if (error) {
+          console.error('Failed to load sound:', error);
+          Alert.alert('Playback Error', 'Failed to load audio file');
+          return;
+        }
+
+        setPlayingAudioId(messageId);
+        setAudioDuration(sound.getDuration());
+        setAudioProgress(0);
+
+        sound.play((success) => {
+          if (success) {
+            console.log('Audio played successfully');
+          } else {
+            console.log('Audio playback failed');
+          }
+          setPlayingAudioId(null);
+          setAudioProgress(0);
+          if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+          }
+        });
+
+        // Start progress tracking
+        progressIntervalRef.current = setInterval(() => {
+          sound.getCurrentTime((seconds) => {
+            setAudioProgress(seconds);
+          });
+        }, 100);
+      });
+
+      soundRef.current = sound;
+    } catch (error) {
+      console.error('Failed to play audio:', error);
+      Alert.alert('Playback Error', 'Failed to play audio');
     }
   };
 
@@ -400,20 +480,29 @@ const ChatScreen: React.FC<ChatScreenProps> = ({route, navigation}) => {
                   ? [styles.myMessageBubble, {backgroundColor: theme.primary}]
                   : [styles.theirMessageBubble, {backgroundColor: theme.surface}],
               ]}
-              onPress={() => navigation?.navigate('AudioPlayer', {
-                audioUri: item.mediaUri,
-                duration: item.duration,
-              })}>
+              onPress={() => handlePlayAudio(item.id, item.mediaUri!)}>
               <View style={styles.audioContent}>
                 <MaterialCommunityIcons 
-                  name="play-circle" 
+                  name={playingAudioId === item.id ? "pause-circle" : "play-circle"} 
                   size={30} 
                   color={isMyMessage ? '#FFFFFF' : theme.primary} 
                 />
                 <View style={styles.audioInfo}>
-                  <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]} />
+                  <View style={[styles.audioWaveform, {backgroundColor: isMyMessage ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.1)'}]}>
+                    {playingAudioId === item.id && audioDuration > 0 && (
+                      <View 
+                        style={[
+                          styles.audioProgress, 
+                          {width: `${(audioProgress / audioDuration) * 100}%`}
+                        ]} 
+                      />
+                    )}
+                  </View>
                   <Text style={{color: isMyMessage ? '#FFFFFF' : theme.text, marginLeft: 8}}>
-                    {item.duration || '0:30'}
+                    {playingAudioId === item.id ? 
+                      `${Math.floor(audioProgress)}:${Math.floor((audioProgress % 1) * 60).toString().padStart(2, '0')}` : 
+                      (item.duration || '0:30')
+                    }
                   </Text>
                 </View>
               </View>
@@ -855,6 +944,11 @@ const styles = StyleSheet.create({
   audioWaveform: {
     height: 20,
     flex: 1,
+    borderRadius: 10,
+  },
+  audioProgress: {
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.8)',
     borderRadius: 10,
   },
   cameraButton: {
